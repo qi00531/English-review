@@ -3,16 +3,8 @@ import { TodayRoute } from '../features/today/TodayRoute';
 import { CaptureRoute } from '../features/capture/CaptureRoute';
 import { ReviewRoute } from '../features/review/ReviewRoute';
 import { AppShell } from '../ui/AppShell';
-
-function Page({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
-  return (
-    <section className="page-enter page-measure">
-      <p className="eyebrow">{eyebrow}</p>
-      <h2 className="page-title">{title}</h2>
-      <div className="page-copy">{children}</div>
-    </section>
-  );
-}
+import { HistoryRoute } from '../features/history/HistoryRoute';
+import { SettingsRoute } from '../features/settings/SettingsRoute';
 
 export function AppRoutes() {
   return (
@@ -21,8 +13,8 @@ export function AppRoutes() {
         <Route path="/" element={<TodayRoute />} />
         <Route path="/capture" element={<CaptureRoute />} />
         <Route path="/review/:listId" element={<ReviewRoute />} />
-        <Route path="/history" element={<Page eyebrow="Archive" title="全部 Lists">按学习日期回看历史内容。</Page>} />
-        <Route path="/settings" element={<Page eyebrow="Preferences" title="设置">管理发音、备份与本地数据。</Page>} />
+        <Route path="/history" element={<HistoryRoute />} />
+        <Route path="/settings" element={<SettingsRoute />} />
       </Routes>
     </AppShell>
   );
