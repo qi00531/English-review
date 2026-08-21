@@ -125,3 +125,47 @@ progress::-moz-progress-bar { background: var(--moss); border-radius: 99px; }
 .draft-error p { margin: 4px 0 0; }
 .draft-error button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--clay); background: transparent; border: 0; cursor: pointer; }
 .capture-save { display: flex; justify-content: flex-end; margin-top: var(--space-2); }
+
+.review-page { min-height: calc(100dvh - 88px); display: grid; grid-template-rows: auto auto 1fr auto; padding-bottom: var(--space-4); }
+.review-header { min-height: 56px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-3); }
+.review-header > strong { font-size: .86rem; font-variant-numeric: tabular-nums; }
+.review-back { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-soft); text-decoration: none; }
+.completion-action { justify-self: end; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 4px; color: var(--moss); background: transparent; border: 0; font-weight: 650; cursor: pointer; }
+.review-tools { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.review-tool-actions { display: flex; align-items: center; gap: 6px; }
+.review-tool-actions button { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; color: var(--ink-soft); background: transparent; border: 0; border-radius: 50%; cursor: pointer; }
+.review-tool-actions button:hover { color: var(--moss); background: var(--moss-soft); }
+.review-tool-actions svg { width: 19px; }
+.word-review { align-self: center; width: min(100%, 760px); margin: 0 auto; text-align: center; }
+.word-focus { min-height: 175px; display: grid; align-content: center; }
+.accent-label { margin: 0; color: var(--ink-soft); font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; }
+.word-focus h2 { margin: 8px 0 2px; font: 600 clamp(3.4rem, 8vw, 7rem)/1 "Iowan Old Style", Baskerville, serif; letter-spacing: -.045em; }
+.phonetic { margin: 0; color: var(--ink-soft); }
+.word-meanings { max-width: 620px; margin: var(--space-4) auto; font-size: 1.08rem; line-height: 1.8; }
+.example-reveal { width: min(100%, 660px); min-height: 72px; display: grid; gap: var(--space-2); margin: var(--space-4) auto 0; padding: 16px 20px; color: var(--ink); background: color-mix(in srgb, var(--paper-raised) 88%, transparent); border: 0; border-radius: 12px; box-shadow: 0 7px 24px rgb(45 49 40 / 5%); cursor: pointer; text-align: left; }
+.example-translation, .chinese-example { color: var(--ink-soft); }
+.review-pagination { display: flex; justify-content: center; gap: var(--space-5); padding-top: var(--space-3); }
+.review-pagination button { min-width: 92px; min-height: 44px; color: var(--ink); background: transparent; border: 0; cursor: pointer; }
+.review-pagination button:disabled { color: color-mix(in srgb, var(--ink-soft) 45%, transparent); cursor: default; }
+.review-table-wrap { align-self: start; overflow-x: auto; margin-top: var(--space-4); background: color-mix(in srgb, var(--paper-raised) 82%, transparent); border-radius: 14px; box-shadow: var(--shadow-soft); }
+.review-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; padding: 10px 12px; text-align: left; }
+.review-table th { padding: 10px 14px; color: var(--ink-soft); font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.review-table tbody tr { cursor: pointer; transition: background var(--motion-fast) ease-out; }
+.review-table tbody tr:hover, .review-table tbody tr:focus { background: var(--moss-soft); outline: none; }
+.review-table td { padding: 15px 14px; }
+.review-table td:first-child { border-radius: 9px 0 0 9px; }
+.review-table td:last-child { border-radius: 0 9px 9px 0; }
+.review-table td strong, .review-table td small { display: block; }
+.review-table td strong { font-family: "Iowan Old Style", Baskerville, serif; font-size: 1.08rem; }
+.review-table td small { color: var(--ink-soft); }
+.undo-toast { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: 20; display: flex; align-items: center; gap: var(--space-4); min-height: 52px; padding: 0 18px; color: white; background: var(--ink); border-radius: 11px; box-shadow: 0 16px 44px rgb(20 25 21 / 24%); }
+.undo-toast button { min-height: 44px; color: #cfe3d1; background: transparent; border: 0; font-weight: 650; cursor: pointer; }
+
+@media (max-width: 700px) {
+  .review-header { grid-template-columns: auto 1fr auto; }
+  .review-header > strong { text-align: center; }
+  .review-tools { align-items: flex-start; }
+  .review-tool-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .word-focus h2 { font-size: clamp(3rem, 18vw, 5rem); }
+  .undo-toast { right: var(--space-3); bottom: var(--space-3); left: var(--space-3); justify-content: space-between; }
+}

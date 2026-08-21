@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { TodayRoute } from '../features/today/TodayRoute';
 import { CaptureRoute } from '../features/capture/CaptureRoute';
+import { ReviewRoute } from '../features/review/ReviewRoute';
 import { AppShell } from '../ui/AppShell';
 
 function Page({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
@@ -19,7 +20,7 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<TodayRoute />} />
         <Route path="/capture" element={<CaptureRoute />} />
-        <Route path="/review/:listId" element={<Page eyebrow="Review" title="开始复习">专注完成当前 List。</Page>} />
+        <Route path="/review/:listId" element={<ReviewRoute />} />
         <Route path="/history" element={<Page eyebrow="Archive" title="全部 Lists">按学习日期回看历史内容。</Page>} />
         <Route path="/settings" element={<Page eyebrow="Preferences" title="设置">管理发音、备份与本地数据。</Page>} />
       </Routes>
