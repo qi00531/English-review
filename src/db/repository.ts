@@ -1,15 +1,25 @@
 import { buildReviewDates } from '../domain/schedule';
 import type { LocalDate, ReviewNode } from '../domain/models';
 import {
+  type DraftRecord,
   type EntryRecord,
   EnglishReviewDatabase,
   type ListRecord,
+  type SettingRecord,
 } from './schema';
 
 export type EntryDraft = Omit<
   EntryRecord,
   'id' | 'listId' | 'normalizedEnglish' | 'updatedAt'
 >;
+
+export type RepositorySnapshot = {
+  lists: ListRecord[];
+  entries: EntryRecord[];
+  reviewNodes: ReviewNode[];
+  drafts: DraftRecord[];
+  settings: SettingRecord[];
+};
 
 export class EnglishReviewRepository {
   constructor(private readonly db: EnglishReviewDatabase) {}
@@ -112,5 +122,63 @@ export class EnglishReviewRepository {
 
   async saveDraft(id: string, payload: unknown): Promise<void> {
     await this.db.drafts.put({ id, payload, updatedAt: new Date().toISOString() });
+  }
+
+  async setSetting(key: string, value: unknown): Promise<void> {
+    await this.db.settings.put({ key, value });
+  }
+
+  async snapshot(): Promise<RepositorySnapshot> {
+    const [lists, entries, reviewNodes, drafts, settings] = await Promise.all([
+      this.db.lists.orderBy('listNumber').toArray(),
+      this.db.entries.toArray(),
+      this.db.reviewNodes.toArray(),
+      this.db.drafts.toArray(),
+      this.db.settings.toArray(),
+    ]);
+    return { lists, entries, reviewNodes, drafts, settings };
+  }
+
+  async clearAll(): Promise<void> {
+    await this.db.transaction(
+      'rw',
+      this.db.lists,
+      this.db.entries,
+      this.db.reviewNodes,
+      this.db.drafts,
+      this.db.settings,
+      () => Promise.all([
+        this.db.lists.clear(),
+        this.db.entries.clear(),
+        this.db.reviewNodes.clear(),
+        this.db.drafts.clear(),
+        this.db.settings.clear(),
+      ]).then(() => undefined),
+    );
+  }
+
+  async replaceSnapshot(snapshot: RepositorySnapshot): Promise<void> {
+    await this.db.transaction(
+      'rw',
+      this.db.lists,
+      this.db.entries,
+      this.db.reviewNodes,
+      this.db.drafts,
+      this.db.settings,
+      async () => {
+        await Promise.all([
+          this.db.lists.clear(),
+          this.db.entries.clear(),
+          this.db.reviewNodes.clear(),
+          this.db.drafts.clear(),
+          this.db.settings.clear(),
+        ]);
+        await this.db.lists.bulkAdd(snapshot.lists);
+        await this.db.entries.bulkAdd(snapshot.entries);
+        await this.db.reviewNodes.bulkAdd(snapshot.reviewNodes);
+        await this.db.drafts.bulkAdd(snapshot.drafts);
+        await this.db.settings.bulkAdd(snapshot.settings);
+      },
+    );
   }
 }
