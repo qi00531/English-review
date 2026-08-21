@@ -1,12 +1,84 @@
 :root {
-  color: #29312b;
-  background: #f4f0e6;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  --paper: #f3efe4;
+  --paper-raised: #fbf8f0;
+  --ink: #273029;
+  --ink-soft: #5e675f;
+  --moss: #49624e;
+  --moss-soft: #dfe7dc;
+  --clay: #95583f;
+  --focus: #2f6843;
+  --shadow-soft: 0 14px 46px rgb(45 49 40 / 8%);
+  --radius: 18px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --motion-fast: 160ms;
+  --motion-page: 280ms;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Avenir Next", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   font-synthesis: none;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+html { min-width: 320px; background: var(--paper); }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--paper); }
 button, input, textarea { font: inherit; }
-.app-shell { width: min(100% - 48px, 1120px); margin: 0 auto; padding: 64px 0; }
-.eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.75rem; }
+button, a { touch-action: manipulation; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--focus) 70%, white); outline-offset: 4px; }
+
+.app-shell { width: min(calc(100% - 48px), 1120px); margin: 0 auto; }
+.site-header { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.brand { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; text-decoration: none; }
+.brand h1 { margin: 0; font: 600 1.18rem/1.2 "Iowan Old Style", Baskerville, "Songti SC", serif; letter-spacing: .015em; }
+.site-header nav { display: flex; align-items: center; gap: var(--space-3); }
+.site-header nav a { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-soft); text-decoration: none; transition: color var(--motion-fast) ease-out, background var(--motion-fast) ease-out; }
+.site-header nav a:hover, .site-header nav a[aria-current="page"] { color: var(--moss); }
+.icon-link { border-radius: 50%; }
+.icon-link:hover { background: var(--moss-soft); }
+
+.page-measure { width: min(100%, 760px); margin: 10vh auto 0; padding: var(--space-6); background: color-mix(in srgb, var(--paper-raised) 88%, transparent); border-radius: var(--radius); box-shadow: var(--shadow-soft); }
+.eyebrow { margin: 0 0 var(--space-2); color: var(--moss); font-size: .75rem; font-weight: 650; letter-spacing: .16em; text-transform: uppercase; }
+.page-title { margin: 0; font: 560 clamp(2.2rem, 5vw, 4.4rem)/1.08 "Iowan Old Style", Baskerville, "Songti SC", serif; letter-spacing: -.025em; }
+.page-copy { max-width: 62ch; margin-top: var(--space-4); color: var(--ink-soft); font-size: 1rem; }
+
+.text-tabs { display: flex; align-items: center; gap: var(--space-4); min-height: 52px; }
+.text-tabs button { position: relative; min-height: 44px; padding: 0; color: var(--ink-soft); background: transparent; border: 0; cursor: pointer; }
+.text-tabs button[aria-selected="true"] { color: var(--ink); font-weight: 650; }
+.text-tabs button[aria-selected="true"]::after { position: absolute; right: 0; bottom: 3px; left: 0; height: 2px; background: var(--moss); border-radius: 2px; content: ""; }
+
+.action { min-height: 44px; padding: 0 18px; color: white; background: var(--moss); border: 0; border-radius: 10px; cursor: pointer; box-shadow: 0 7px 18px rgb(56 82 62 / 14%); transition: opacity var(--motion-fast) ease-out, box-shadow var(--motion-fast) ease-out; }
+.action:hover { box-shadow: 0 9px 24px rgb(56 82 62 / 20%); }
+.action:active { opacity: .82; }
+.action:disabled { cursor: not-allowed; opacity: .44; box-shadow: none; }
+
+.progress-wrap { display: grid; gap: var(--space-2); }
+.progress-meta { display: flex; justify-content: space-between; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+progress { width: 100%; height: 7px; overflow: hidden; appearance: none; background: var(--moss-soft); border: 0; border-radius: 99px; }
+progress::-webkit-progress-bar { background: var(--moss-soft); }
+progress::-webkit-progress-value { background: var(--moss); border-radius: 99px; }
+progress::-moz-progress-bar { background: var(--moss); border-radius: 99px; }
+
+.skip-link { position: fixed; top: var(--space-3); left: var(--space-3); z-index: 100; padding: 10px 14px; color: white; background: var(--ink); border-radius: 8px; transform: translateY(-180%); }
+.skip-link:focus { transform: translateY(0); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.page-enter { animation: page-enter var(--motion-page) ease-out both; }
+@keyframes page-enter { from { opacity: 0; transform: translateY(8px); } }
+
+@media (max-width: 600px) {
+  .app-shell { width: min(calc(100% - 32px), 1120px); }
+  .site-header { min-height: 72px; }
+  .page-measure { margin-top: var(--space-4); padding: var(--space-4); }
+  .page-copy { font-size: 1rem; }
+  .text-tabs { gap: var(--space-3); overflow-x: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
