@@ -103,3 +103,25 @@ progress::-moz-progress-bar { background: var(--moss); border-radius: 99px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.capture-page { width: min(100%, 900px); margin: 0 auto; padding: var(--space-4) 0 var(--space-6); }
+.back-link { min-height: 44px; display: inline-flex; align-items: center; gap: var(--space-2); color: var(--ink-soft); text-decoration: none; }
+.capture-heading { margin: var(--space-5) 0; }
+.capture-heading h2 { margin: 0; font: 560 clamp(2.6rem, 6vw, 4.6rem)/1.06 "Iowan Old Style", Baskerville, "Songti SC", serif; letter-spacing: -.035em; }
+.capture-heading > p:last-child { max-width: 58ch; color: var(--ink-soft); }
+.capture-editor, .draft-row { padding: var(--space-4); background: color-mix(in srgb, var(--paper-raised) 88%, transparent); border-radius: 14px; box-shadow: var(--shadow-soft); }
+.capture-editor { display: grid; gap: 12px; }
+.capture-editor label, .draft-row label { font-weight: 650; }
+.capture-editor textarea, .draft-row textarea { width: 100%; margin-top: 7px; padding: 14px 16px; color: var(--ink); background: #fffdf7; border: 0; border-radius: 9px; box-shadow: inset 0 0 0 1px rgb(53 62 54 / 10%); resize: vertical; }
+.capture-editor > p { margin: 0; color: var(--ink-soft); font-size: .82rem; }
+.capture-editor .action { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-2); }
+.form-error { color: var(--clay) !important; }
+.capture-results { display: grid; gap: var(--space-3); margin-top: var(--space-5); }
+.draft-row { display: grid; gap: var(--space-3); }
+.draft-word { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.draft-word h3, .draft-error h3 { margin: 0; font: 600 1.6rem/1.2 "Iowan Old Style", Baskerville, serif; }
+.draft-word span, .draft-error p { color: var(--ink-soft); }
+.draft-error { grid-template-columns: 1fr auto; align-items: center; }
+.draft-error p { margin: 4px 0 0; }
+.draft-error button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--clay); background: transparent; border: 0; cursor: pointer; }
+.capture-save { display: flex; justify-content: flex-end; margin-top: var(--space-2); }
