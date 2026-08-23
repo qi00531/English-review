@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import type { EntryRecord } from '../../db/schema';
 import { ReviewPage, type ReviewAudioPort } from './ReviewPage';
+import type { PlaybackResult } from '../../audio/speechFallback';
 
 const entries: EntryRecord[] = [
   { id: 'one', listId: 'list-1', english: 'retain', normalizedEnglish: 'retain', usIpa: '/rɪˈteɪn/', ukIpa: null, usAudioUrl: null, ukAudioUrl: null, meaningsZh: ['保持', '保留', '记住', '雇用'], exampleEn: 'We retain more through review.', exampleZh: '通过复习，我们记住更多。', audioFallback: 'speech-synthesis', source: 'ai', updatedAt: 'now' },
@@ -12,7 +13,7 @@ const entries: EntryRecord[] = [
 it('supports focused word review, table review, visibility modes, audio, and completion placement', async () => {
   const user = userEvent.setup();
   const audio: ReviewAudioPort = {
-    loopCurrent: vi.fn(), playList: vi.fn(), playRow: vi.fn(), pause: vi.fn(),
+    loopCurrent: vi.fn().mockResolvedValue('playing'), playList: vi.fn().mockResolvedValue('playing'), playRow: vi.fn().mockResolvedValue('playing'), pause: vi.fn(), subscribe: vi.fn(() => vi.fn()),
   };
   const complete = vi.fn();
   render(<MemoryRouter><ReviewPage listId="list-1" listNumber={1} entries={entries} audio={audio} onComplete={complete} backHref="/history?tab=lists" backLabel="返回历史" /></MemoryRouter>);
@@ -36,4 +37,40 @@ it('supports focused word review, table review, visibility modes, audio, and com
 
   await user.click(screen.getByRole('tab', { name: '英文' }));
   expect(screen.queryByText('保持；保留；记住；雇用')).not.toBeInTheDocument();
+});
+
+it('offers a retry when automatic pronunciation needs a user gesture', async () => {
+  const user = userEvent.setup();
+  let listener: ((result: PlaybackResult) => void) | null = null;
+  const audio: ReviewAudioPort = {
+    loopCurrent: vi.fn().mockResolvedValue('playing'),
+    playList: vi.fn().mockResolvedValue('playing'),
+    playRow: vi.fn().mockResolvedValue('playing'),
+    pause: vi.fn(),
+    subscribe: vi.fn((next) => { listener = next; return vi.fn(); }),
+  };
+  render(<MemoryRouter><ReviewPage listId="list-1" listNumber={1} entries={entries} audio={audio} onComplete={vi.fn()} backHref="/" backLabel="今日任务" /></MemoryRouter>);
+
+  await vi.waitFor(() => expect(audio.loopCurrent).toHaveBeenCalledOnce());
+  act(() => listener?.('needs-user-gesture'));
+  await user.click(screen.getByRole('button', { name: '点击页面开启发音' }));
+
+  expect(audio.loopCurrent).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('button', { name: '点击页面开启发音' })).not.toBeInTheDocument();
+});
+
+it('does not show a false playing state when List pronunciation is unavailable', async () => {
+  const user = userEvent.setup();
+  const audio: ReviewAudioPort = {
+    loopCurrent: vi.fn().mockResolvedValue('playing'),
+    playList: vi.fn().mockResolvedValue('unavailable'),
+    playRow: vi.fn().mockResolvedValue('playing'),
+    pause: vi.fn(), subscribe: vi.fn(() => vi.fn()),
+  };
+  render(<MemoryRouter><ReviewPage listId="list-1" listNumber={1} entries={entries} audio={audio} onComplete={vi.fn()} backHref="/" backLabel="今日任务" /></MemoryRouter>);
+
+  await user.click(screen.getByRole('button', { name: '播放本组' }));
+
+  expect(screen.getByRole('button', { name: '播放本组' })).toBeInTheDocument();
+  expect(screen.getByText('当前浏览器无法发音')).toBeInTheDocument();
 });

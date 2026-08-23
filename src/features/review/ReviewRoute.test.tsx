@@ -9,7 +9,7 @@ import { ReviewRoute, type ReviewRepositoryPort } from './ReviewRoute';
 
 const list = { id: 'l1', listNumber: 1, createdDate: '2026-08-20' as LocalDate, createdAt: '2026-08-20T10:00:00Z' };
 const entry = { id: 'e1', listId: 'l1', english: 'focus', normalizedEnglish: 'focus', usIpa: null, ukIpa: null, usAudioUrl: null, ukAudioUrl: null, meaningsZh: ['专注'], exampleEn: 'Focus now.', exampleZh: '现在专注。', audioFallback: 'speech-synthesis' as const, source: 'manual' as const, updatedAt: 'now' };
-const audio = { loopCurrent: vi.fn(), playList: vi.fn(), playRow: vi.fn(), pause: vi.fn(), dispose: vi.fn() };
+const audio = { loopCurrent: vi.fn().mockResolvedValue('playing'), playList: vi.fn().mockResolvedValue('playing'), playRow: vi.fn().mockResolvedValue('playing'), pause: vi.fn(), subscribe: vi.fn(() => vi.fn()), dispose: vi.fn() };
 
 function Location() {
   const location = useLocation();
