@@ -1,9 +1,12 @@
 import { BookOpenText, Settings } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const pageClass = pathname === '/' ? 'app-shell--home' : 'app-shell--inner';
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${pageClass}`} data-testid="app-shell">
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       <header className="site-header">
         <NavLink className="brand" to="/" aria-label="Word Journal 首页">

@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { Action } from './Action';
+import { AppShell } from './AppShell';
 import { LiveStatus } from './LiveStatus';
 import { TextTabs } from './TextTabs';
 
@@ -38,4 +40,14 @@ it('provides semantic actions and polite live feedback', () => {
 
   expect(screen.getByRole('button', { name: '开始复习' })).toHaveClass('action');
   expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+});
+
+it('marks the homepage for the full clipboard composition', () => {
+  render(<MemoryRouter initialEntries={['/']}><AppShell><p>Content</p></AppShell></MemoryRouter>);
+  expect(screen.getByTestId('app-shell')).toHaveClass('app-shell--home');
+});
+
+it('marks inner pages for the quiet paper crop', () => {
+  render(<MemoryRouter initialEntries={['/history']}><AppShell><p>Content</p></AppShell></MemoryRouter>);
+  expect(screen.getByTestId('app-shell')).toHaveClass('app-shell--inner');
 });
