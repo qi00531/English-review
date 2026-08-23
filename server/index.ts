@@ -3,8 +3,9 @@ import { createApp } from './app';
 import { AiJsonProvider } from './enrichment/ai';
 import { FreeDictionaryProvider } from './enrichment/dictionary';
 import { EnrichmentService } from './enrichment/service';
-import { readEnv } from './env';
+import { loadLocalEnv, readEnv } from './env';
 
+loadLocalEnv();
 const env = readEnv();
 const service = new EnrichmentService(
   new FreeDictionaryProvider(),
