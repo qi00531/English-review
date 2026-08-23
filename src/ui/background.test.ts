@@ -22,5 +22,7 @@ describe('clipboard background', () => {
     expect(css).toContain('.review-plan-row--overdue');
     expect(css).toContain('.review-plan-row--upcoming');
     expect(css).toContain('.history-summary-row');
+    expect(css).toContain('.audio-recovery');
+    expect(css).toContain('.audio-unavailable');
   });
 });

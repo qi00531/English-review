@@ -168,6 +168,9 @@ progress::-moz-progress-bar { background: var(--moss); border-radius: 99px; }
 .word-focus h2 { margin: 8px 0 2px; font: 600 clamp(3.4rem, 8vw, 7rem)/1 "Iowan Old Style", Baskerville, serif; letter-spacing: -.045em; }
 .phonetic { margin: 0; color: var(--ink-soft); }
 .word-meanings { max-width: 620px; margin: var(--space-4) auto; font-size: 1.08rem; line-height: 1.8; }
+.audio-recovery { min-height: 44px; display: block; margin: 4px auto var(--space-3); padding: 0 4px; color: var(--moss); background: transparent; border: 0; border-bottom: 1px solid rgb(73 98 78 / 28%); cursor: pointer; }
+.audio-recovery:hover { color: var(--ink); border-bottom-color: currentColor; }
+.audio-unavailable { margin: 4px auto var(--space-3); color: var(--ink-soft); font-size: .82rem; text-align: center; }
 .example-reveal { width: min(100%, 660px); min-height: 72px; display: grid; gap: var(--space-2); margin: var(--space-4) auto 0; padding: 16px 20px; color: var(--ink); background: color-mix(in srgb, var(--paper-raised) 88%, transparent); border: 0; border-radius: 12px; box-shadow: 0 7px 24px rgb(45 49 40 / 5%); cursor: pointer; text-align: left; }
 .example-translation, .chinese-example { color: var(--ink-soft); }
 .review-pagination { display: flex; justify-content: center; gap: var(--space-5); padding-top: var(--space-3); }
