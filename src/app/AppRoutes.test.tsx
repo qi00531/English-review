@@ -6,7 +6,7 @@ it.each([
   ['/', '今天的复习已经完成。'],
   ['/capture', '记录今天所学'],
   ['/review/list-1', '开始复习'],
-  ['/history', '全部 Lists'],
+  ['/history', '历史'],
   ['/settings', '设置'],
 ])('renders the expected route for %s', async (route, heading) => {
   render(<MemoryRouter initialEntries={[route]}><AppRoutes /></MemoryRouter>);

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { HistoryPage } from './HistoryPage';
 
 const group = {
@@ -10,11 +11,47 @@ const group = {
 };
 
 describe('HistoryPage', () => {
+  const renderPage = (initialTab: 'plan' | 'lists' = 'plan') => render(
+    <MemoryRouter>
+      <HistoryPage
+        groups={[group]}
+        plan={[{ date: '2026-08-24', status: 'due', lists: [{ id: 'l1', listNumber: 1 }] }]}
+        today="2026-08-24"
+        initialTab={initialTab}
+        onUpdateEntry={vi.fn()}
+        onDeleteList={vi.fn()}
+      />
+    </MemoryRouter>,
+  );
+
+  it('opens the review plan by default and exposes due List links', () => {
+    renderPage();
+
+    expect(screen.getByRole('tab', { name: '复习计划' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('8月24日')).toBeInTheDocument();
+    expect(screen.getByText('待复习')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '复习 List 1' })).toHaveAttribute(
+      'href', '/review/l1?from=history&tab=plan',
+    );
+  });
+
+  it('switches to all Lists and exposes manual review', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('tab', { name: '全部 Lists' }));
+
+    expect(screen.getByText('2026年8月20日')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '开始复习 List 1' })).toHaveAttribute(
+      'href', '/review/l1?from=history&tab=lists',
+    );
+  });
+
   it('shows list metadata, edits an entry, and confirms deletion', async () => {
     const user = userEvent.setup();
     const onUpdateEntry = vi.fn();
     const onDeleteList = vi.fn();
-    render(<HistoryPage groups={[group]} onUpdateEntry={onUpdateEntry} onDeleteList={onDeleteList} />);
+    render(<MemoryRouter><HistoryPage groups={[group]} plan={[]} today="2026-08-24" initialTab="lists" onUpdateEntry={onUpdateEntry} onDeleteList={onDeleteList} /></MemoryRouter>);
     expect(screen.getByText('2026年8月20日')).toBeInTheDocument();
     expect(screen.getByText('1 个词条')).toBeInTheDocument();
     expect(screen.getByText('待复习')).toBeInTheDocument();
