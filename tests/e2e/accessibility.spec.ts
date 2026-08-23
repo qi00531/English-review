@@ -19,3 +19,11 @@ test('loads the generated clipboard background', async ({ page }) => {
   );
   expect(background).toContain('clipboard-paper-background.png');
 });
+
+test('presents the focused completed-day hierarchy', async ({ page }) => {
+  await clearDatabase(page);
+  await expect(page.getByText('今日进度')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '今天的复习已经完成。' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '记录今天所学' })).toHaveCount(1);
+  await expect(page.getByText('连续学习')).toBeVisible();
+});
