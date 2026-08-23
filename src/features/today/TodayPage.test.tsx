@@ -8,18 +8,21 @@ const due: TodayListItem[] = [
 ];
 
 it('shows oldest due List first and explains why capture is locked', () => {
-  render(<MemoryRouter><TodayPage due={due} loading={false} /></MemoryRouter>);
+  render(<MemoryRouter><TodayPage due={due} loading={false} progress={{ completed: 0, total: 2 }} streakDays={5} /></MemoryRouter>);
 
   const links = screen.getAllByRole('link', { name: /List/ });
   expect(links[0]).toHaveAccessibleName(/List 1/);
-  expect(screen.getByText('还剩 2 个 Lists')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: '记录今天所学' })).toBeDisabled();
-  expect(screen.getByText(/完成以上复习后解锁/)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '今天还有 2 个 List 待复习' })).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /记录今天所学/ })).not.toBeInTheDocument();
+  expect(screen.getByText('连续学习')).toBeInTheDocument();
+  expect(screen.getByText('5')).toBeInTheDocument();
 });
 
 it('unlocks capture when no due List remains', () => {
-  render(<MemoryRouter><TodayPage due={[]} loading={false} /></MemoryRouter>);
+  render(<MemoryRouter><TodayPage due={[]} loading={false} progress={{ completed: 1, total: 1 }} streakDays={5} /></MemoryRouter>);
 
+  expect(screen.getByRole('heading', { name: '今天的复习已经完成。' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: '记录今天所学' })).toHaveAttribute('href', '/capture');
-  expect(screen.getByRole('heading', { name: /今天的复习\s*已经完成/ })).toBeInTheDocument();
+  expect(screen.queryByText(/可以记录|保持每天|表现很好/)).not.toBeInTheDocument();
+  expect(screen.getAllByRole('link').filter((link) => link.classList.contains('primary-capture'))).toHaveLength(1);
 });
