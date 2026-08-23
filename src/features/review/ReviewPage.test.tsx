@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import type { EntryRecord } from '../../db/schema';
 import { ReviewPage, type ReviewAudioPort } from './ReviewPage';
 
@@ -14,8 +15,9 @@ it('supports focused word review, table review, visibility modes, audio, and com
     loopCurrent: vi.fn(), playList: vi.fn(), playRow: vi.fn(), pause: vi.fn(),
   };
   const complete = vi.fn();
-  render(<ReviewPage listId="list-1" listNumber={1} entries={entries} audio={audio} onComplete={complete} />);
+  render(<MemoryRouter><ReviewPage listId="list-1" listNumber={1} entries={entries} audio={audio} onComplete={complete} backHref="/history?tab=lists" backLabel="返回历史" /></MemoryRouter>);
 
+  expect(screen.getByRole('link', { name: '返回历史' })).toHaveAttribute('href', '/history?tab=lists');
   expect(screen.getByRole('heading', { name: 'retain' })).toBeInTheDocument();
   expect(audio.loopCurrent).toHaveBeenCalledWith(entries[0], 'us');
   expect(screen.queryByText(entries[0].exampleZh)).not.toBeInTheDocument();

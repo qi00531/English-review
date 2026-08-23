@@ -1,5 +1,6 @@
 import { ArrowLeft, Pause, Play, Table2, Rows3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Accent } from '../../audio/speechFallback';
 import type { ReviewAudioEntry } from '../../audio/AudioController';
 import type { EntryRecord } from '../../db/schema';
@@ -15,9 +16,10 @@ export type ReviewAudioPort = {
   pause(): void;
 };
 
-export function ReviewPage({ listId, listNumber, entries, audio, onComplete }: {
+export function ReviewPage({ listId, listNumber, entries, audio, onComplete, backHref, backLabel }: {
   listId: string; listNumber: number; entries: EntryRecord[];
   audio: ReviewAudioPort; onComplete: () => void | Promise<void>;
+  backHref: string; backLabel: string;
 }) {
   const [index, setIndex] = useState(0);
   const [visibility, setVisibility] = useState<VisibilityMode>('complete');
@@ -38,7 +40,7 @@ export function ReviewPage({ listId, listNumber, entries, audio, onComplete }: {
   return (
     <section className="review-page page-enter">
       <header className="review-header">
-        <a href="/" className="review-back"><ArrowLeft aria-hidden="true" size={18} />今日任务</a>
+        <Link to={backHref} className="review-back"><ArrowLeft aria-hidden="true" size={18} />{backLabel}</Link>
         <strong>List {listNumber} · {layout === 'word' ? `${index + 1} / ${entries.length}` : `${entries.length} words`}</strong>
         {(layout === 'table' || index === entries.length - 1) ? <CompletionAction onComplete={onComplete} /> : <span />}
       </header>
