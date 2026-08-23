@@ -15,6 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </NavLink>
         <nav aria-label="主要导航">
           <NavLink to="/history">历史</NavLink>
+          <span className="nav-separator" role="separator" aria-label="导航分隔" />
           <NavLink className="icon-link" to="/settings" aria-label="设置">
             <Settings aria-hidden="true" size={20} strokeWidth={1.6} />
           </NavLink>

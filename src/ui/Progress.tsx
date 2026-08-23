@@ -1,8 +1,9 @@
 export function Progress({ value, max, label }: { value: number; max: number; label: string }) {
   return (
     <div className="progress-wrap">
-      <div className="progress-meta"><span>{label}</span><span>{value} / {max}</span></div>
+      <span className="progress-label">{label}</span>
       <progress value={value} max={max} aria-label={label} />
+      <span className="progress-count">{value} / {max}</span>
     </div>
   );
 }
