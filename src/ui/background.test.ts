@@ -14,5 +14,13 @@ describe('clipboard background', () => {
     expect(css).toContain('max-width: 330px');
     expect(css).toContain('.nav-separator');
     expect(css).toContain('.learning-streak');
+    expect(css).toContain('.history-tabs');
+    expect(css).toContain('.review-plan-row');
+    expect(css).toContain('.review-plan-lists');
+    expect(css).toContain('.review-plan-row--completed');
+    expect(css).toContain('.review-plan-row--due');
+    expect(css).toContain('.review-plan-row--overdue');
+    expect(css).toContain('.review-plan-row--upcoming');
+    expect(css).toContain('.history-summary-row');
   });
 });
