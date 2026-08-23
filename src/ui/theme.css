@@ -105,6 +105,7 @@ progress::-moz-progress-bar { background: var(--moss); border-radius: 99px; }
 @media (max-width: 820px) {
   .app-shell--home::before { background-position: center top; background-size: auto 100%; }
   .app-shell--home::after { background: rgb(246 241 229 / 13%); }
+  .app-shell--home main { padding-top: 64px; }
   .app-shell--inner::before { background-position: center 68%; background-size: auto 145%; }
   .app-shell--inner::after { background: rgb(246 241 229 / 56%); }
   .today-page { grid-template-columns: 1fr; gap: var(--space-5); padding-top: var(--space-5); }

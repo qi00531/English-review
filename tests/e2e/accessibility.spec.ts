@@ -11,3 +11,11 @@ test('keyboard navigation exposes a visible skip link', async ({ page }) => {
   await clearDatabase(page); await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: '跳到主要内容' })).toBeFocused();
 });
+
+test('loads the generated clipboard background', async ({ page }) => {
+  await page.goto('/');
+  const background = await page.getByTestId('app-shell').evaluate((element) =>
+    getComputedStyle(element, '::before').backgroundImage,
+  );
+  expect(background).toContain('clipboard-paper-background.png');
+});
