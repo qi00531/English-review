@@ -10,5 +10,9 @@ describe('clipboard background', () => {
     expect(css).toContain('background-repeat: no-repeat');
     expect(css).not.toContain('repeating-radial-gradient');
     expect(css).not.toContain('repeating-linear-gradient');
+    expect(css).toContain('.today-status');
+    expect(css).toContain('max-width: 330px');
+    expect(css).toContain('.nav-separator');
+    expect(css).toContain('.learning-streak');
   });
 });
