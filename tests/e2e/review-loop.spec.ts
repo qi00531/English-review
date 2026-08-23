@@ -10,7 +10,15 @@ test('captures English terms and persists the List after reload', async ({ page 
   await expect(page.getByText('focus', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '保存到今日 List' }).click();
   await page.getByRole('link', { name: '历史' }).click();
+  await expect(page.getByRole('tab', { name: '复习计划' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel')).toContainText('List 1');
+  await page.getByRole('tab', { name: '全部 Lists' }).click();
   await expect(page.getByRole('button', { name: /List 1/ })).toContainText('2 个词条');
+  await page.getByRole('link', { name: '开始复习 List 1' }).click();
+  await page.getByRole('button', { name: '下一个' }).click();
+  await page.getByRole('button', { name: '完成复习' }).click();
+  await expect(page).toHaveURL(/\/history\?tab=lists$/);
+  await expect(page.getByRole('tab', { name: '全部 Lists' })).toHaveAttribute('aria-selected', 'true');
   await page.reload();
   await expect(page.getByRole('button', { name: /List 1/ })).toBeVisible();
 });
