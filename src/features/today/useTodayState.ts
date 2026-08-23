@@ -5,6 +5,7 @@ import { repository as defaultRepository } from '../../db';
 import type { EnglishReviewRepository, RepositorySnapshot } from '../../db/repository';
 import type { LocalDate } from '../../domain/models';
 import { selectTodayState } from '../../domain/today';
+import { calculateLearningStreak } from '../../domain/streak';
 import type { TodayListItem } from './TodayPage';
 
 export function buildTodayViewState(today: LocalDate, snapshot: RepositorySnapshot) {
@@ -24,12 +25,29 @@ export function buildTodayViewState(today: LocalDate, snapshot: RepositorySnapsh
       wordCount: counts.get(node.listId) ?? 0,
     }] : [];
   });
-  return { due, captureLocked: selected.captureLocked };
+  const completedToday = snapshot.reviewNodes.filter((node) =>
+    node.dueDate <= today
+    && node.completedAt !== null
+    && format(new Date(node.completedAt), 'yyyy-MM-dd') === today,
+  ).length;
+  const total = selected.due.length + completedToday;
+
+  return {
+    due,
+    captureLocked: selected.captureLocked,
+    progress: { completed: completedToday, total: Math.max(total, 1) },
+    streakDays: calculateLearningStreak(snapshot.lists.map((list) => list.createdDate), today),
+  };
 }
 
 export function useTodayState(repository: EnglishReviewRepository = defaultRepository) {
-  const [state, setState] = useState<{ due: TodayListItem[]; loading: boolean }>({
-    due: [], loading: true,
+  const [state, setState] = useState<{
+    due: TodayListItem[];
+    loading: boolean;
+    progress: { completed: number; total: number };
+    streakDays: number;
+  }>({
+    due: [], loading: true, progress: { completed: 0, total: 1 }, streakDays: 0,
   });
 
   useEffect(() => {
@@ -38,7 +56,7 @@ export function useTodayState(repository: EnglishReviewRepository = defaultRepos
         ...buildTodayViewState(format(new Date(), 'yyyy-MM-dd') as LocalDate, snapshot),
         loading: false,
       }),
-      error: () => setState({ due: [], loading: false }),
+      error: () => setState({ due: [], loading: false, progress: { completed: 0, total: 1 }, streakDays: 0 }),
     });
     return () => subscription.unsubscribe();
   }, [repository]);
