@@ -1,10 +1,10 @@
 import type { EntryRecord } from '../../db/schema';
 import type { Accent } from '../../audio/speechFallback';
-import type { ReviewAudioPort } from './ReviewPage';
 import type { VisibilityMode } from './ViewModeTabs';
 
-export function TableReview({ entries, mode, accent, audio }: {
-  entries: EntryRecord[]; mode: VisibilityMode; accent: Accent; audio: ReviewAudioPort;
+export function TableReview({ entries, mode, accent, onPlayRow }: {
+  entries: EntryRecord[]; mode: VisibilityMode; accent: Accent;
+  onPlayRow(entry: EntryRecord, accent: Accent): void;
 }) {
   const showEnglish = mode !== 'chinese';
   const showChinese = mode !== 'english';
@@ -16,8 +16,8 @@ export function TableReview({ entries, mode, accent, audio }: {
           <tr
             key={entry.id}
             tabIndex={0}
-            onClick={() => audio.playRow(entry, accent)}
-            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') audio.playRow(entry, accent); }}
+            onClick={() => onPlayRow(entry, accent)}
+            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onPlayRow(entry, accent); }}
           >
             {showEnglish && <td><strong>{entry.english}</strong><small>{accent === 'us' ? entry.usIpa : entry.ukIpa}</small></td>}
             {showChinese && <td>{entry.meaningsZh.join('；')}</td>}

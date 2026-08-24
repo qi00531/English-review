@@ -28,42 +28,59 @@ export function ReviewPage({ listId, listNumber, entries, audio, onComplete, bac
   const [layout, setLayout] = useState<'word' | 'table'>('word');
   const [accent, setAccent] = useState<Accent>('us');
   const [translationOpen, setTranslationOpen] = useState(false);
-  const [playingList, setPlayingList] = useState(false);
+  const [activePlayback, setActivePlayback] = useState<'current' | 'list' | null>(null);
   const [playbackResult, setPlaybackResult] = useState<PlaybackResult | null>(null);
   const entry = entries[index];
 
   useEffect(() => audio.subscribe((result) => {
     setPlaybackResult(result);
-    if (result !== 'playing') setPlayingList(false);
+    if (result !== 'playing') setActivePlayback(null);
   }), [audio]);
 
   useEffect(() => {
     let current = true;
     setPlaybackResult(null);
-    setPlayingList(false);
+    setActivePlayback(null);
     if (layout === 'word' && entry) void audio.loopCurrent(entry, accent).then((result) => {
-      if (current) setPlaybackResult(result);
+      if (current) {
+        setPlaybackResult(result);
+        setActivePlayback(result === 'playing' ? 'current' : null);
+      }
     });
     return () => { current = false; audio.pause(); };
   }, [accent, audio, entry, layout]);
 
   if (!entry) return <p className="page-measure">这个 List 还没有词条。</p>;
   function move(next: number) { setTranslationOpen(false); setIndex(next); }
-  async function retryCurrent() {
+  async function retryPlayback() {
     setPlaybackResult(null);
-    setPlaybackResult(await audio.loopCurrent(entry, accent));
+    const result = layout === 'word'
+      ? await audio.loopCurrent(entry, accent)
+      : await audio.playList(listId, entries, accent);
+    setPlaybackResult(result);
+    setActivePlayback(result === 'playing' ? (layout === 'word' ? 'current' : 'list') : null);
   }
-  async function toggleListPlayback() {
-    if (playingList) {
+  async function togglePlayback() {
+    if (activePlayback) {
       audio.pause();
-      setPlayingList(false);
+      setActivePlayback(null);
       setPlaybackResult(null);
       return;
     }
-    const result = await audio.playList(listId, entries, accent);
+    const result = layout === 'word'
+      ? await audio.loopCurrent(entry, accent)
+      : await audio.playList(listId, entries, accent);
     setPlaybackResult(result);
-    setPlayingList(result === 'playing');
+    setActivePlayback(result === 'playing' ? (layout === 'word' ? 'current' : 'list') : null);
   }
+  function playRow(entryToPlay: EntryRecord, rowAccent: Accent) {
+    setActivePlayback(null);
+    setPlaybackResult(null);
+    void audio.playRow(entryToPlay, rowAccent).then(setPlaybackResult);
+  }
+  const playbackLabel = activePlayback
+    ? '暂停播放'
+    : layout === 'word' ? '播放当前单词' : '播放本组';
 
   return (
     <section className="review-page page-enter">
@@ -77,15 +94,15 @@ export function ReviewPage({ listId, listNumber, entries, audio, onComplete, bac
         <div className="review-tool-actions">
           <button type="button" onClick={() => setAccent((value) => value === 'us' ? 'uk' : 'us')}>{accent === 'us' ? '美式' : '英式'}</button>
           <button type="button" aria-label={layout === 'word' ? '表格视图' : '单词视图'} onClick={() => setLayout((value) => value === 'word' ? 'table' : 'word')}>{layout === 'word' ? <Table2 aria-hidden="true" /> : <Rows3 aria-hidden="true" />}</button>
-          <button type="button" aria-label={playingList ? '暂停播放' : '播放本组'} onClick={() => void toggleListPlayback()}>{playingList ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</button>
+          <button type="button" aria-label={playbackLabel} onClick={() => void togglePlayback()}>{activePlayback ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}</button>
         </div>
       </div>
 
       {layout === 'word'
         ? <WordReview entry={entry} mode={visibility} translationOpen={translationOpen} onToggleTranslation={() => setTranslationOpen((open) => !open)} />
-        : <TableReview entries={entries} mode={visibility} accent={accent} audio={audio} />}
+        : <TableReview entries={entries} mode={visibility} accent={accent} onPlayRow={playRow} />}
 
-      {playbackResult === 'needs-user-gesture' && <button className="audio-recovery" type="button" onClick={() => void retryCurrent()}>点击页面开启发音</button>}
+      {playbackResult === 'needs-user-gesture' && <button className="audio-recovery" type="button" onClick={() => void retryPlayback()}>点击页面开启发音</button>}
       {playbackResult === 'unavailable' && <p className="audio-unavailable" role="status">当前浏览器无法发音</p>}
 
       {layout === 'word' && <nav className="review-pagination" aria-label="单词翻页">
