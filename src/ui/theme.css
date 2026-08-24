@@ -40,7 +40,7 @@ a { color: inherit; }
 .app-shell--inner::before { background-position: center 68%; background-size: auto 145%; filter: saturate(.82) brightness(1.08); }
 .app-shell--inner::after { background: rgb(246 241 229 / 46%); }
 .app-shell--home { width: min(calc(100% - 112px), 1400px); }
-.app-shell--home .site-header { color: var(--ink); background: rgb(248 244 235 / 84%); box-shadow: 0 0 0 100vmax rgb(248 244 235 / 84%); clip-path: inset(0 -100vmax); }
+.app-shell--home .site-header { color: var(--ink); background: rgb(248 244 235 / 56%); border-bottom-color: rgb(63 78 68 / 8%); }
 .app-shell--home .site-header nav a { color: var(--ink-soft); }
 .site-header { min-height: 100px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); border-bottom: 1px solid rgb(63 78 68 / 12%); }
 .brand { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; text-decoration: none; }
@@ -82,6 +82,7 @@ progress::-moz-progress-bar { background: var(--moss); border-radius: 99px; }
 
 .today-page { min-height: calc(100dvh - 100px); display: grid; grid-template-rows: auto minmax(360px, 1fr) auto; padding-bottom: clamp(40px, 6vh, 72px); }
 .today-progress { padding: 38px 0 34px; border-bottom: 1px solid rgb(63 78 68 / 10%); }
+.today-progress .progress-wrap { width: min(100%, 840px); margin: 0 auto; gap: clamp(20px, 3vw, 40px); }
 .today-progress progress { height: 6px; }
 .today-core { display: grid; align-content: center; justify-items: center; padding: 64px 0; text-align: center; }
 .today-core--pending { align-content: start; padding-top: clamp(56px, 8vh, 96px); }

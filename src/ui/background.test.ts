@@ -24,5 +24,12 @@ describe('clipboard background', () => {
     expect(css).toContain('.history-summary-row');
     expect(css).toContain('.audio-recovery');
     expect(css).toContain('.audio-unavailable');
+    expect(css).toContain('.app-shell--home .site-header');
+    expect(css).toContain('background: rgb(248 244 235 / 56%)');
+    expect(css).not.toContain('100vmax');
+    expect(css).not.toContain('clip-path: inset(0 -100vmax)');
+    expect(css).toContain('.today-progress .progress-wrap');
+    expect(css).toContain('width: min(100%, 840px)');
+    expect(css).toContain('margin: 0 auto');
   });
 });
