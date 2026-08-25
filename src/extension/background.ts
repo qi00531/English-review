@@ -3,6 +3,7 @@ import { enrichSelection } from '../capture/enrich-selection';
 import { repository } from '../db';
 import { CaptureBackgroundService } from './background-service';
 import { readAiSettings } from './settings';
+import { deliverSelectionCapture } from './context-menu';
 
 const service = new CaptureBackgroundService(repository, readAiSettings, enrichSelection);
 
@@ -37,7 +38,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'word-journal-capture' && info.selectionText && tab?.id) {
-    void chrome.tabs.sendMessage(tab.id, { type: 'SHOW_CAPTURE', text: info.selectionText }).catch(() => undefined);
+    void deliverSelectionCapture(tab.id, info.selectionText).catch(() => undefined);
   }
 });
 

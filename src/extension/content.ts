@@ -1,6 +1,6 @@
 import { validateSelection } from '../capture/validate-selection';
 import { createCaptureOverlay } from './capture-overlay';
-import { eventComesFromCaptureOverlay } from './selection-events';
+import { eventComesFromCaptureOverlay, listenForSelectionEnd } from './selection-events';
 
 const overlay = createCaptureOverlay({ sendMessage: (message) => chrome.runtime.sendMessage(message) });
 
@@ -9,11 +9,13 @@ function show(text: string, rect: DOMRect) {
   if (result.ok) overlay.showLauncher(result.text, rect);
 }
 
-document.addEventListener('mouseup', (event) => {
+listenForSelectionEnd(document, (event) => {
   if (eventComesFromCaptureOverlay(event)) return;
-  const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return overlay.dismiss();
-  show(selection.toString(), selection.getRangeAt(0).getBoundingClientRect());
+  queueMicrotask(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return overlay.dismiss();
+    show(selection.toString(), selection.getRangeAt(0).getBoundingClientRect());
+  });
 });
 window.addEventListener('scroll', overlay.dismiss, { passive: true });
 chrome.runtime.onMessage.addListener((message) => {
