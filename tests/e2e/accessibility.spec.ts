@@ -20,6 +20,30 @@ test('loads the generated clipboard background', async ({ page }) => {
   expect(background).toContain('clipboard-paper-background.png');
 });
 
+test('keeps navigation controls fixed across routes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await clearDatabase(page);
+
+  const navigationPositions = async () => {
+    const brand = await page.getByRole('link', { name: 'Word Journal 首页' }).boundingBox();
+    const history = await page.getByRole('link', { name: '历史' }).boundingBox();
+    const settings = await page.getByRole('link', { name: '设置' }).boundingBox();
+    expect(brand).not.toBeNull();
+    expect(history).not.toBeNull();
+    expect(settings).not.toBeNull();
+    return { brand: brand!.x, history: history!.x, settings: settings!.x };
+  };
+
+  const home = await navigationPositions();
+  for (const path of ['/history', '/settings']) {
+    await page.goto(path);
+    const current = await navigationPositions();
+    expect(current.brand).toBeCloseTo(home.brand, 0);
+    expect(current.history).toBeCloseTo(home.history, 0);
+    expect(current.settings).toBeCloseTo(home.settings, 0);
+  }
+});
+
 test('presents the focused completed-day hierarchy', async ({ page }) => {
   await clearDatabase(page);
   await expect(page.getByText('今日进度')).toBeVisible();
