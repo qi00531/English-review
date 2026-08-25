@@ -66,7 +66,8 @@
 
 ### 7. AI 与词典配置
 
-- 解释 `DICTIONARY_BASE_URL`、`AI_BASE_URL`、`AI_API_KEY`、`AI_MODEL`、`PORT`。
+- 解释实际生效的 `AI_BASE_URL`、`AI_API_KEY`、`AI_MODEL`、`PORT`。
+- 如提及 `.env.example` 中的 `DICTIONARY_BASE_URL`，必须明确当前运行时代码仍固定使用 dictionaryapi.dev，该变量尚未接入 `readEnv`。
 - 说明兼容 OpenAI Chat Completions 的服务可接入。
 - 说明词典无结果时回退到 AI。
 - 强调密钥只由服务端读取，不得使用 `VITE_*` 暴露或提交到仓库。
