@@ -11,7 +11,10 @@ it('uses an explicit readable Chinese UI typography hierarchy', () => {
   expect(css).toMatch(/\.history-tabs button\s*{[^}]*font-size:\s*1rem/s);
   expect(css).toMatch(/\.review-plan-row time\s*{[^}]*1\.25rem/s);
   expect(css).toMatch(/\.review-plan-status\s*{[^}]*font-size:\s*\.9375rem/s);
-  expect(css).toMatch(/\.review-header > strong\s*{[^}]*font-size:\s*1rem/s);
-  expect(css).toMatch(/\.word-meanings\s*{[^}]*font-size:\s*1\.1875rem/s);
-  expect(css).toMatch(/\.example-reveal\s*{[^}]*font-size:\s*1\.0625rem/s);
+  expect(css).toMatch(/\.review-header > strong\s*{[^}]*font-size:\s*1\.125rem/s);
+  expect(css).toMatch(/\.review-back\s*{[^}]*font-size:\s*1\.125rem/s);
+  expect(css).toMatch(/\.review-tool-actions button\s*{[^}]*font-size:\s*1\.0625rem/s);
+  expect(css).toMatch(/\.word-meanings\s*{[^}]*font-size:\s*1\.375rem/s);
+  expect(css).toMatch(/\.example-reveal\s*{[^}]*font-size:\s*1\.1875rem/s);
+  expect(css).toMatch(/\.review-pagination button\s*{[^}]*font-size:\s*1\.125rem/s);
 });
