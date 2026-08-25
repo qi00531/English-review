@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { EntryRecord, ListRecord } from '../../db/schema';
 import type { LocalDate, ReviewNode } from '../../domain/models';
-import { findPlanFocusDate, type ReviewPlanRow } from '../../domain/review-plan';
+import type { ReviewPlanRow } from '../../domain/review-plan';
 import { ConfirmDialog } from '../../ui/ConfirmDialog';
 import { EditEntryForm } from './EditEntryForm';
 
@@ -23,24 +23,13 @@ export function HistoryPage({ groups, plan, today, initialTab, onUpdateEntry, on
   const [openId, setOpenId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<HistoryGroup | null>(null);
-  const planRefs = useRef(new Map<LocalDate, HTMLElement>());
-  const hasPositionedPlan = useRef(false);
-
-  useEffect(() => {
-    if (tab !== 'plan' || hasPositionedPlan.current || plan.length === 0) return;
-    const focusDate = findPlanFocusDate(today, plan);
-    planRefs.current.get(focusDate ?? today)?.scrollIntoView?.({ block: 'center' });
-    hasPositionedPlan.current = true;
-  }, [plan, tab, today]);
-
   return <section className="history-page page-enter">
-    <header className="section-heading"><p className="eyebrow">Archive</p><h2>历史</h2><p>查看复习安排，或回到任意 List 再练一次。</p></header>
     <div className="history-tabs" role="tablist" aria-label="历史内容">
       <button type="button" role="tab" aria-selected={tab === 'plan'} aria-controls="history-plan" onClick={() => setTab('plan')}>复习计划</button>
       <button type="button" role="tab" aria-selected={tab === 'lists'} aria-controls="history-lists" onClick={() => setTab('lists')}>全部 Lists</button>
     </div>
     {tab === 'plan' && <div id="history-plan" role="tabpanel" className="review-plan">
-      {plan.map((row) => <article className={`review-plan-row review-plan-row--${row.status}${row.date === today ? ' review-plan-row--today' : ''}`} key={row.date} ref={(element) => { if (element) planRefs.current.set(row.date, element); }}>
+      {plan.map((row) => <article className={`review-plan-row review-plan-row--${row.status}${row.date === today ? ' review-plan-row--today' : ''}`} key={row.date}>
         <time dateTime={row.date}>{formatPlanDate(row.date)}</time>
         <div className="review-plan-lists">{row.lists.map((list) => row.status === 'upcoming'
           ? <span key={list.id}>List {list.listNumber}</span>

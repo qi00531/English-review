@@ -35,6 +35,21 @@ describe('HistoryPage', () => {
     );
   });
 
+  it('starts with useful history content without a decorative heading or automatic scroll', () => {
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    try {
+      renderPage();
+      expect(screen.queryByText('Archive')).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '历史' })).not.toBeInTheDocument();
+      expect(screen.queryByText('查看复习安排，或回到任意 List 再练一次。')).not.toBeInTheDocument();
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
+
   it('switches to all Lists and exposes manual review', async () => {
     const user = userEvent.setup();
     renderPage();
