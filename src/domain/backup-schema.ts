@@ -18,6 +18,14 @@ const ReviewNodeSchema = z.object({
   id: z.string(), listId: z.string(), dueDate: LocalDateSchema,
   completedAt: z.string().nullable(), sequence: z.number().int().min(0).max(5),
 });
+const CaptureDraftSchema = z.object({
+  id: z.string(), text: z.string(), normalizedText: z.string(), type: z.enum(['word', 'phrase']),
+  meaningsZh: z.array(z.string()), exampleEn: z.string(), exampleZh: z.string(),
+  usIpa: z.string().nullable(), ukIpa: z.string().nullable(),
+  usAudioUrl: z.string().nullable(), ukAudioUrl: z.string().nullable(),
+  audioFallback: z.enum(['none', 'speech-synthesis']),
+  status: z.enum(['enriching', 'ready', 'saved', 'failed']), capturedAt: z.string(),
+});
 
 export const BackupV1Schema = z.object({
   format: z.literal('english-review-backup'),
@@ -29,5 +37,6 @@ export const BackupV1Schema = z.object({
     reviewNodes: z.array(ReviewNodeSchema),
     drafts: z.array(z.object({ id: z.string(), payload: z.unknown(), updatedAt: z.string() })),
     settings: z.array(z.object({ key: z.string(), value: z.unknown() })),
+    captureDrafts: z.array(CaptureDraftSchema).default([]),
   }),
 });

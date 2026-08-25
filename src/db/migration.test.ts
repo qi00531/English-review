@@ -39,6 +39,7 @@ it('normalizes legacy English values during the version 2 migration', async () =
   const migrated = new EnglishReviewDatabase(name);
   const entry = await migrated.entries.get('entry-1');
   expect(entry?.normalizedEnglish).toBe('retain');
+  expect(await migrated.captureDrafts.toArray()).toEqual([]);
 
   migrated.close();
   await Dexie.delete(name);

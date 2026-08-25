@@ -1,5 +1,6 @@
 import { EnglishReviewDatabase } from './schema';
 import { EnglishReviewRepository, type EntryDraft } from './repository';
+import type { CaptureDraft } from '../capture/model';
 
 const retain: EntryDraft = {
   english: 'retain',
@@ -13,6 +14,26 @@ const retain: EntryDraft = {
   audioFallback: 'none',
   source: 'dictionary-ai',
 };
+
+function captureDraft(patch: Partial<CaptureDraft> = {}): CaptureDraft {
+  return {
+    id: 'capture-1',
+    text: 'potential',
+    normalizedText: 'potential',
+    type: 'word',
+    meaningsZh: ['潜力', '可能性'],
+    exampleEn: 'She has great potential.',
+    exampleZh: '她很有潜力。',
+    usIpa: null,
+    ukIpa: null,
+    usAudioUrl: null,
+    ukAudioUrl: null,
+    audioFallback: 'speech-synthesis',
+    status: 'ready',
+    capturedAt: '2026-08-25T08:00:00.000Z',
+    ...patch,
+  };
+}
 
 describe('EnglishReviewRepository', () => {
   let db: EnglishReviewDatabase;
@@ -70,5 +91,33 @@ describe('EnglishReviewRepository', () => {
     expect(await repo.getLists()).toEqual([]);
     expect(await repo.getEntries(list.id)).toEqual([]);
     expect(await repo.getReviewNodes(list.id)).toEqual([]);
+  });
+
+  it('stores local capture drafts and locates existing List duplicates', async () => {
+    const draft = captureDraft();
+    await repo.saveCaptureDraft(draft);
+    expect(await repo.getCaptureDrafts()).toEqual([draft]);
+    expect(await repo.findDuplicate('potential')).toBeNull();
+
+    const list = await repo.saveEntries('2026-08-25', [retain]);
+    expect(await repo.findDuplicate('retain')).toEqual({ listId: list.id, listNumber: 1 });
+  });
+
+  it('promotes selected ready captures and leaves unselected captures in the inbox', async () => {
+    await repo.saveCaptureDraft(captureDraft());
+    await repo.saveCaptureDraft(captureDraft({ id: 'capture-2', text: 'subtle', normalizedText: 'subtle' }));
+
+    const list = await repo.promoteCaptureDrafts('2026-08-25', ['capture-1']);
+
+    expect((await repo.getEntries(list.id)).map((entry) => entry.english)).toEqual(['potential']);
+    expect((await repo.getCaptureDrafts()).map((draft) => draft.id)).toEqual(['capture-2']);
+    expect(await repo.getReviewNodes(list.id)).toHaveLength(6);
+  });
+
+  it('rejects missing and non-ready capture selections', async () => {
+    await repo.saveCaptureDraft(captureDraft({ status: 'failed' }));
+    await expect(repo.promoteCaptureDrafts('2026-08-25', [])).rejects.toThrow('At least one capture is required');
+    await expect(repo.promoteCaptureDrafts('2026-08-25', ['missing'])).rejects.toThrow('Capture selection is incomplete');
+    await expect(repo.promoteCaptureDrafts('2026-08-25', ['capture-1'])).rejects.toThrow('Capture selection is incomplete');
   });
 });

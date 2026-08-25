@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { LocalDate, ReviewNode } from '../domain/models';
+import type { CaptureDraft } from '../capture/model';
 
 export type ListRecord = {
   id: string;
@@ -42,6 +43,7 @@ export class EnglishReviewDatabase extends Dexie {
   reviewNodes!: EntityTable<ReviewNode, 'id'>;
   drafts!: EntityTable<DraftRecord, 'id'>;
   settings!: EntityTable<SettingRecord, 'key'>;
+  captureDrafts!: EntityTable<CaptureDraft, 'id'>;
 
   constructor(name = 'english-review') {
     super(name);
@@ -61,5 +63,8 @@ export class EnglishReviewDatabase extends Dexie {
           entry.normalizedEnglish = entry.english.trim().toLocaleLowerCase('en-US');
         }),
       );
+    this.version(3).stores({
+      captureDrafts: '&id,normalizedText,status,capturedAt',
+    });
   }
 }

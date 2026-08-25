@@ -25,7 +25,7 @@ function renderRoute(repository: ReviewRepositoryPort, entryPath = '/review/l1?f
 }
 
 function snapshot(dueDate: LocalDate): RepositorySnapshot {
-  return { lists: [list], entries: [entry], reviewNodes: [{ id: 'n1', listId: 'l1', dueDate, completedAt: null, sequence: 0 }], drafts: [], settings: [] };
+  return { lists: [list], entries: [entry], reviewNodes: [{ id: 'n1', listId: 'l1', dueDate, completedAt: null, sequence: 0 }], drafts: [], settings: [], captureDrafts: [] };
 }
 
 it('completes only a node due today and returns to the originating History tab', async () => {

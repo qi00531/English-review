@@ -27,6 +27,12 @@ describe('backup and restore', () => {
     await repo.saveEntries('2026-08-21', [draft]);
     await repo.saveDraft('capture', { text: 'subtle' });
     await repo.setSetting('accent', 'us');
+    await repo.saveCaptureDraft({
+      id: 'capture-1', text: 'potential', normalizedText: 'potential', type: 'word',
+      meaningsZh: ['潜力'], exampleEn: 'She has potential.', exampleZh: '她有潜力。',
+      usIpa: null, ukIpa: null, usAudioUrl: null, ukAudioUrl: null,
+      audioFallback: 'speech-synthesis', status: 'ready', capturedAt: '2026-08-21T10:00:00.000Z',
+    });
     const before = await repo.snapshot();
     const json = await exportBackup(repo, '2026-08-21T12:00:00.000Z');
 

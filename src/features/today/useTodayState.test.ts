@@ -16,7 +16,7 @@ it('joins due nodes with List number and word count', () => {
     }, {
       id: 'node-2', listId: 'list-2', dueDate: '2026-08-21', completedAt: '2026-08-22T01:00:00.000Z', sequence: 0,
     }],
-    drafts: [], settings: [],
+    drafts: [], settings: [], captureDrafts: [],
   } as RepositorySnapshot;
 
   const view = buildTodayViewState('2026-08-22', snapshot);
