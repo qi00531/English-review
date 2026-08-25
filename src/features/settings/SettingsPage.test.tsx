@@ -21,4 +21,14 @@ describe('SettingsPage', () => {
     await user.click(screen.getByRole('button', { name: '确认清空' }));
     expect(onClear).toHaveBeenCalled();
   });
+
+  it('edits extension AI settings without exposing the key as text', async () => {
+    const user = userEvent.setup();
+    const onSaveAi = vi.fn();
+    render(<SettingsPage accent="us" health="available" onAccentChange={vi.fn()} onExport={vi.fn()} onImport={vi.fn()} onClear={vi.fn()} aiSettings={{ baseUrl: 'https://api.openai.com/v1', model: 'gpt-4.1-mini', apiKey: '', enabled: true }} onSaveAi={onSaveAi} />);
+    expect(screen.getByLabelText('API Key')).toHaveAttribute('type', 'password');
+    await user.type(screen.getByLabelText('API Key'), 'local-secret');
+    await user.click(screen.getByRole('button', { name: '保存 AI 设置' }));
+    expect(onSaveAi).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'local-secret' }));
+  });
 });
