@@ -7,6 +7,7 @@ it.each([
   ['/capture', '记录今天所学'],
   ['/review/list-1', '开始复习'],
   ['/settings', '设置'],
+  ['/inbox', '待整理'],
 ])('renders the expected route for %s', async (route, heading) => {
   render(<MemoryRouter initialEntries={[route]}><AppRoutes /></MemoryRouter>);
   expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();

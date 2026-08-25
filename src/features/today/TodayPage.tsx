@@ -15,9 +15,10 @@ type TodayPageProps = {
   loading: boolean;
   progress: { completed: number; total: number };
   streakDays: number;
+  inboxCount?: number;
 };
 
-export function TodayPage({ due, loading, progress, streakDays }: TodayPageProps) {
+export function TodayPage({ due, loading, progress, streakDays, inboxCount = 0 }: TodayPageProps) {
   if (loading) return <section className="today-page today-page--loading">
     <div className="today-progress"><Progress value={0} max={1} label="今日进度" /></div>
     <p className="today-loading" role="status">正在整理今天的学习计划…</p>
@@ -48,6 +49,7 @@ export function TodayPage({ due, loading, progress, streakDays }: TodayPageProps
           <ArrowRight aria-hidden="true" size={20} strokeWidth={1.6} />
         </Link>}
       </div>
+      {inboxCount > 0 && <Link className="inbox-shortcut" to="/inbox" aria-label={`待整理 ${inboxCount}`}>待整理 <strong>{inboxCount}</strong></Link>}
       <div className="learning-streak" aria-label={`连续学习 ${streakDays} 天`}>
         <span aria-hidden="true" className="streak-line" />
         <span className="streak-copy"><CalendarDays aria-hidden="true" size={19} strokeWidth={1.5} /><span>连续学习</span><strong>{streakDays}</strong><span>天</span></span>

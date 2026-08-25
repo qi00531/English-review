@@ -1,10 +1,11 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
 import { TodayRoute } from '../features/today/TodayRoute';
 import { CaptureRoute } from '../features/capture/CaptureRoute';
 import { ReviewRoute } from '../features/review/ReviewRoute';
 import { AppShell } from '../ui/AppShell';
 import { HistoryRoute } from '../features/history/HistoryRoute';
 import { SettingsRoute } from '../features/settings/SettingsRoute';
+import { InboxRoute } from '../features/inbox/InboxRoute';
 
 export function AppRoutes() {
   return (
@@ -15,11 +16,13 @@ export function AppRoutes() {
         <Route path="/review/:listId" element={<ReviewRoute />} />
         <Route path="/history" element={<HistoryRoute />} />
         <Route path="/settings" element={<SettingsRoute />} />
+        <Route path="/inbox" element={<InboxRoute />} />
       </Routes>
     </AppShell>
   );
 }
 
 export function App() {
-  return <BrowserRouter><AppRoutes /></BrowserRouter>;
+  const Router = typeof chrome !== 'undefined' && chrome.runtime?.id ? HashRouter : BrowserRouter;
+  return <Router><AppRoutes /></Router>;
 }
