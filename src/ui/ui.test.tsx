@@ -1,11 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { Action } from './Action';
 import { AppShell } from './AppShell';
 import { LiveStatus } from './LiveStatus';
 import { Progress } from './Progress';
 import { TextTabs } from './TextTabs';
+
+function RouteSwitcher() {
+  const navigate = useNavigate();
+  return <button type="button" onClick={() => navigate('/history')}>进入历史</button>;
+}
 
 it('exposes view modes as keyboard-navigable tabs', async () => {
   const user = userEvent.setup();
@@ -57,6 +62,18 @@ it('separates history and settings without adding a header card', () => {
   render(<MemoryRouter><AppShell><p>Content</p></AppShell></MemoryRouter>);
   expect(screen.getByRole('separator', { name: '导航分隔' })).toBeInTheDocument();
   expect(screen.getByRole('banner')).not.toHaveClass('card');
+});
+
+it('shares navigation feedback and resets scroll after route changes', async () => {
+  const user = userEvent.setup();
+  const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+  render(<MemoryRouter><AppShell><RouteSwitcher /></AppShell></MemoryRouter>);
+  expect(screen.getByRole('link', { name: '历史' })).toHaveClass('nav-action');
+  expect(screen.getByRole('link', { name: '设置' })).toHaveClass('nav-action');
+  scrollTo.mockClear();
+  await user.click(screen.getByRole('button', { name: '进入历史' }));
+  expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
+  scrollTo.mockRestore();
 });
 
 it('renders a compact labeled progress rail with its count', () => {
