@@ -44,6 +44,21 @@ test('keeps navigation controls fixed across routes', async ({ page }) => {
   }
 });
 
+test('opens History at the top and keeps navigation fixed while scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await clearDatabase(page);
+  await page.evaluate(() => {
+    document.body.style.minHeight = '2000px';
+    window.scrollTo(0, 800);
+  });
+  await page.getByRole('link', { name: '历史' }).click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.getByText('Archive')).toHaveCount(0);
+  await page.evaluate(() => window.scrollTo(0, 300));
+  const headerTop = await page.getByRole('banner').evaluate((header) => header.getBoundingClientRect().top);
+  expect(headerTop).toBe(0);
+});
+
 test('presents the focused completed-day hierarchy', async ({ page }) => {
   await clearDatabase(page);
   await expect(page.getByText('今日进度')).toBeVisible();
