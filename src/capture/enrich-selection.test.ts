@@ -34,4 +34,13 @@ describe('enrichSelection', () => {
     const request = vi.fn().mockResolvedValueOnce(json([])).mockResolvedValueOnce(json({ choices: [{ message: { content: '{}' } }] }));
     await expect(enrichSelection('potential', settings, request)).rejects.toThrow();
   });
+
+  it('preserves only the provider status needed for safe error mapping', async () => {
+    const request = vi.fn()
+      .mockResolvedValueOnce(json([]))
+      .mockResolvedValueOnce(json({ error: { message: 'secret provider body' } }, 401));
+    await expect(enrichSelection('potential', settings, request)).rejects.toMatchObject({
+      code: 'AI_REQUEST_FAILED', status: 401,
+    });
+  });
 });

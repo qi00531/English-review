@@ -16,6 +16,14 @@ const CompletionSchema = z.object({
 
 type Request = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+class AiRequestError extends Error {
+  readonly code = 'AI_REQUEST_FAILED';
+  constructor(readonly status: number) {
+    super('AI request failed');
+    this.name = 'AiRequestError';
+  }
+}
+
 export async function enrichSelection(
   raw: string,
   settings: AiSettings,
@@ -53,7 +61,7 @@ export async function enrichSelection(
     }),
     signal: AbortSignal.timeout(20_000),
   });
-  if (!aiResponse.ok) throw new Error(`AI_REQUEST_FAILED_${aiResponse.status}`);
+  if (!aiResponse.ok) throw new AiRequestError(aiResponse.status);
   const completion = CompletionSchema.parse(await aiResponse.json());
   const content = AiContentSchema.parse(JSON.parse(completion.choices[0].message.content));
 

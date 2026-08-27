@@ -1,3 +1,4 @@
+import type { SafeCaptureError } from '../capture/capture-error';
 import type { CaptureDraft, CaptureMessage, DuplicateMatch } from '../capture/model';
 
 type Sender = (message: CaptureMessage) => Promise<any>;
@@ -27,17 +28,43 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
     position(panel);
     root.append(panel);
   }
+  async function copyErrorDetail(detail: string) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(detail);
+      return;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = detail; textarea.style.position = 'fixed'; textarea.style.opacity = '0';
+    document.body.append(textarea); textarea.select(); document.execCommand('copy'); textarea.remove();
+  }
+  function showError(error: SafeCaptureError, retry: () => void | Promise<void>) {
+    dismiss();
+    const panel = document.createElement('section');
+    panel.className = 'panel error'; panel.setAttribute('role', 'alert');
+    const message = document.createElement('p'); message.textContent = error.message;
+    const actions = document.createElement('div'); actions.className = 'actions';
+    const copy = document.createElement('button'); copy.type = 'button'; copy.textContent = '复制错误详情';
+    copy.addEventListener('click', () => void copyErrorDetail(error.detail));
+    const retryButton = document.createElement('button'); retryButton.type = 'button'; retryButton.className = 'primary'; retryButton.textContent = '重试';
+    retryButton.addEventListener('click', () => void retry());
+    actions.append(copy, retryButton); panel.append(message, actions); position(panel); root.append(panel);
+  }
+  async function submitDraft(draft: CaptureDraft, allowDuplicate: boolean) {
+    const result = await sendMessage({ type: 'SAVE_CAPTURE', draft, allowDuplicate });
+    if (result.ok) showMessage(`已加入 List ${result.listNumber}`);
+    else if (result.error) showError(result.error, () => submitDraft(draft, allowDuplicate));
+    else if (result.code === 'DUPLICATE') showPreview(draft, result.duplicate);
+  }
   async function save(draft: CaptureDraft, allowDuplicate: boolean) {
     const meanings = (root.querySelector('#wj-meanings') as HTMLTextAreaElement).value.split(/[；;\n]/).map((v) => v.trim()).filter(Boolean);
     const exampleEn = (root.querySelector('#wj-example') as HTMLTextAreaElement).value.trim();
-    const result = await sendMessage({ type: 'SAVE_CAPTURE', draft: { ...draft, meaningsZh: meanings, exampleEn }, allowDuplicate });
-    if (result.ok) showMessage('已加入待整理');
+    await submitDraft({ ...draft, meaningsZh: meanings, exampleEn }, allowDuplicate);
   }
   function showPreview(draft: CaptureDraft, duplicate: DuplicateMatch) {
     dismiss();
     const panel = document.createElement('section');
     panel.className = 'panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', '收录预览');
-    panel.innerHTML = `<h2>${draft.text}</h2><div class="type">${draft.type === 'word' ? '单词' : '短语'}</div>${duplicate ? `<p class="note">已收录于 List ${duplicate.listNumber}</p>` : ''}<label for="wj-meanings">中文释义</label><textarea id="wj-meanings">${draft.meaningsZh.join('；')}</textarea><label for="wj-example">英文例句</label><textarea id="wj-example">${draft.exampleEn}</textarea><div class="actions"><button data-cancel>取消</button><button class="primary" data-save>${duplicate ? '再次加入' : '加入待整理'}</button></div>`;
+    panel.innerHTML = `<h2>${draft.text}</h2><div class="type">${draft.type === 'word' ? '单词' : '短语'}</div>${duplicate ? `<p class="note">已收录于 List ${duplicate.listNumber}</p>` : ''}<label for="wj-meanings">中文释义</label><textarea id="wj-meanings">${draft.meaningsZh.join('；')}</textarea><label for="wj-example">英文例句</label><textarea id="wj-example">${draft.exampleEn}</textarea><div class="actions"><button data-cancel>取消</button><button class="primary" data-save>${duplicate ? '再次加入' : '加入今日 List'}</button></div>`;
     position(panel); root.append(panel);
     panel.querySelector('[data-cancel]')?.addEventListener('click', dismiss);
     panel.querySelector('[data-save]')?.addEventListener('click', () => void save(draft, Boolean(duplicate)));
@@ -47,14 +74,21 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
     const button = document.createElement('button');
     button.className = 'launcher'; button.type = 'button'; button.title = '收录到 Word Journal'; button.setAttribute('aria-label', '收录到 Word Journal'); button.textContent = 'W';
     position(button); root.append(button);
-    button.addEventListener('click', async () => {
+    async function preview() {
       button.disabled = true;
       try {
         const result = await sendMessage({ type: 'PREVIEW_CAPTURE', text });
         if (result.ok) showPreview(result.draft, result.duplicate);
-        else showMessage(result.code === 'AI_KEY_MISSING' ? '请先在 Word Journal 设置中填写 API Key' : '暂时无法生成，请重试', 'alert');
-      } catch { showMessage('网络异常，请重试', 'alert'); }
-    });
+        else if (result.error) showError(result.error, preview);
+        else {
+          const message = result.code === 'AI_KEY_MISSING' ? '请先在 Word Journal 设置中填写 API Key' : '内容格式无法识别，请重新选择单词或短语';
+          showError({ code: result.code === 'AI_KEY_MISSING' ? 'AUTH_FAILED' : 'INVALID_CONTENT', message, stage: 'preview', detail: `错误类型: ${result.code}\n阶段: preview\n说明: ${message}` }, preview);
+        }
+      } catch {
+        showError({ code: 'NETWORK', message: '网络连接失败，请检查连接后重试', stage: 'preview', detail: '错误类型: NETWORK\n阶段: preview\n说明: 网络连接失败，请检查连接后重试' }, preview);
+      }
+    }
+    button.addEventListener('click', () => void preview());
   }
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') dismiss(); });
   document.addEventListener('mousedown', (event) => {

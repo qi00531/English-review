@@ -7,10 +7,16 @@ import { deliverSelectionCapture } from './context-menu';
 import { format } from 'date-fns';
 import type { LocalDate } from '../domain/models';
 import { migrateLegacyCaptures } from '../db/legacy-capture-migration';
+import { DailyListService } from '../capture/daily-list-service';
+import { toSafeCaptureError } from '../capture/capture-error';
 
 void migrateLegacyCaptures(repository, format(new Date(), 'yyyy-MM-dd') as LocalDate);
 
-const service = new CaptureBackgroundService(repository, readAiSettings, enrichSelection);
+const dailyListService = new DailyListService(
+  repository,
+  () => format(new Date(), 'yyyy-MM-dd') as LocalDate,
+);
+const service = new CaptureBackgroundService(repository, readAiSettings, enrichSelection, dailyListService);
 
 async function openWordJournal(route = '/') {
   const base = chrome.runtime.getURL('index.html');
@@ -32,7 +38,8 @@ async function handleMessage(message: CaptureMessage) {
 
 chrome.runtime.onMessage.addListener((message: CaptureMessage, _sender, sendResponse) => {
   void handleMessage(message).then(sendResponse).catch((error: unknown) => {
-    sendResponse({ ok: false, code: 'UNEXPECTED', message: error instanceof Error ? error.message : '未知错误' });
+    const stage = message.type === 'SAVE_CAPTURE' ? 'save' : 'enrich';
+    sendResponse({ ok: false, error: toSafeCaptureError(error, stage) });
   });
   return true;
 });

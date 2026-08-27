@@ -1,10 +1,11 @@
 import type { AiSettings, CaptureDraft, DuplicateMatch } from '../capture/model';
 import { validateSelection } from '../capture/validate-selection';
+import type { SaveCaptureResult } from '../capture/model';
 
 type Repository = {
   findDuplicate(normalizedText: string): Promise<DuplicateMatch>;
-  saveCaptureDraft(draft: CaptureDraft): Promise<void>;
 };
+type DailyListWriter = { saveCapture(draft: CaptureDraft, allowDuplicate: boolean): Promise<SaveCaptureResult> };
 type ReadSettings = () => Promise<AiSettings>;
 type Enrich = (text: string, settings: AiSettings) => Promise<CaptureDraft>;
 
@@ -13,6 +14,7 @@ export class CaptureBackgroundService {
     private readonly repository: Repository,
     private readonly readSettings: ReadSettings,
     private readonly enrich: Enrich,
+    private readonly dailyListWriter: DailyListWriter,
   ) {}
 
   async preview(text: string) {
@@ -30,7 +32,6 @@ export class CaptureBackgroundService {
     if (draft.status !== 'ready') return { ok: false as const, code: 'INVALID_DRAFT' as const };
     const duplicate = await this.repository.findDuplicate(draft.normalizedText);
     if (duplicate && !allowDuplicate) return { ok: false as const, code: 'DUPLICATE' as const, duplicate };
-    await this.repository.saveCaptureDraft({ ...draft, status: 'ready' });
-    return { ok: true as const };
+    return this.dailyListWriter.saveCapture(draft, allowDuplicate);
   }
 }

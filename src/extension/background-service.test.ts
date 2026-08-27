@@ -9,9 +9,10 @@ const draft: CaptureDraft = {
 };
 
 function setup(duplicate: { listId: string; listNumber: number } | null = null) {
-  const repository = { findDuplicate: vi.fn().mockResolvedValue(duplicate), saveCaptureDraft: vi.fn().mockResolvedValue(undefined) };
-  const service = new CaptureBackgroundService(repository, vi.fn().mockResolvedValue({ baseUrl: 'x', model: 'm', apiKey: 'k', enabled: true }), vi.fn().mockResolvedValue(draft));
-  return { service, repository };
+  const repository = { findDuplicate: vi.fn().mockResolvedValue(duplicate) };
+  const dailyList = { saveCapture: vi.fn().mockResolvedValue({ ok: true, listId: 'l3', listNumber: 3 }) };
+  const service = new CaptureBackgroundService(repository, vi.fn().mockResolvedValue({ baseUrl: 'x', model: 'm', apiKey: 'k', enabled: true }), vi.fn().mockResolvedValue(draft), dailyList);
+  return { service, repository, dailyList };
 }
 
 describe('CaptureBackgroundService', () => {
@@ -27,9 +28,9 @@ describe('CaptureBackgroundService', () => {
   });
 
   it('requires explicit duplicate override when saving', async () => {
-    const { service, repository } = setup({ listId: 'l1', listNumber: 1 });
+    const { service, dailyList } = setup({ listId: 'l1', listNumber: 1 });
     await expect(service.save(draft, false)).resolves.toEqual({ ok: false, code: 'DUPLICATE', duplicate: { listId: 'l1', listNumber: 1 } });
-    await expect(service.save(draft, true)).resolves.toEqual({ ok: true });
-    expect(repository.saveCaptureDraft).toHaveBeenCalledTimes(1);
+    await expect(service.save(draft, true)).resolves.toEqual({ ok: true, listId: 'l3', listNumber: 3 });
+    expect(dailyList.saveCapture).toHaveBeenCalledWith(draft, true);
   });
 });
