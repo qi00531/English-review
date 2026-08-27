@@ -23,53 +23,91 @@ export type RepositorySnapshot = {
   captureDrafts: CaptureDraft[];
 };
 
+export type DailyListDuplicate = Exclude<DuplicateMatch, null> & {
+  normalizedEnglish: string;
+};
+
+export type AppendToDailyListResult =
+  | { ok: true; list: ListRecord }
+  | { ok: false; code: 'DUPLICATE'; duplicates: DailyListDuplicate[] };
+
+export function normalizeEnglish(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+}
+
 export class EnglishReviewRepository {
   constructor(private readonly db: EnglishReviewDatabase) {}
 
   async saveEntries(createdDate: LocalDate, drafts: EntryDraft[]): Promise<ListRecord> {
-    if (drafts.length === 0) throw new Error('At least one entry is required');
+    const result = await this.appendToDailyList(createdDate, drafts, true);
+    if (!result.ok) throw new Error('Duplicate override failed');
+    return result.list;
+  }
 
+  async appendToDailyList(
+    createdDate: LocalDate,
+    drafts: EntryDraft[],
+    allowDuplicates = false,
+  ): Promise<AppendToDailyListResult> {
+    if (drafts.length === 0) throw new Error('At least one entry is required');
     return this.db.transaction(
       'rw',
       this.db.lists,
       this.db.entries,
       this.db.reviewNodes,
       async () => {
-        let list = await this.db.lists.where('createdDate').equals(createdDate).first();
-        const now = new Date().toISOString();
-
-        if (!list) {
-          list = {
-            id: crypto.randomUUID(),
-            listNumber: (await this.db.lists.count()) + 1,
-            createdDate,
-            createdAt: now,
+        const normalized = [...new Set(drafts.map((draft) => normalizeEnglish(draft.english)))];
+        const existing = await this.db.entries.where('normalizedEnglish').anyOf(normalized).toArray();
+        if (!allowDuplicates && existing.length > 0) {
+          const listRecords = (await this.db.lists.bulkGet(existing.map((entry) => entry.listId)))
+            .filter((list): list is ListRecord => list !== undefined);
+          const lists = new Map(listRecords.map((list) => [list.id, list]));
+          return {
+            ok: false as const,
+            code: 'DUPLICATE' as const,
+            duplicates: existing.flatMap((entry) => {
+              const list = lists.get(entry.listId);
+              return list ? [{
+                listId: list.id,
+                listNumber: list.listNumber,
+                normalizedEnglish: entry.normalizedEnglish,
+              }] : [];
+            }),
           };
-          await this.db.lists.add(list);
-
-          const nodes: ReviewNode[] = buildReviewDates(createdDate).map((dueDate, sequence) => ({
-            id: crypto.randomUUID(),
-            listId: list!.id,
-            dueDate,
-            completedAt: null,
-            sequence,
-          }));
-          await this.db.reviewNodes.bulkAdd(nodes);
         }
-
-        await this.db.entries.bulkAdd(
-          drafts.map((draft) => ({
-            ...draft,
-            id: crypto.randomUUID(),
-            listId: list!.id,
-            normalizedEnglish: draft.english.trim().toLocaleLowerCase('en-US'),
-            updatedAt: now,
-          })),
-        );
-
-        return list;
+        const list = await this.getOrCreateDailyList(createdDate);
+        await this.insertEntries(list.id, drafts);
+        return { ok: true as const, list };
       },
     );
+  }
+
+  private async getOrCreateDailyList(createdDate: LocalDate): Promise<ListRecord> {
+    const existing = await this.db.lists.where('createdDate').equals(createdDate).first();
+    if (existing) return existing;
+    const list: ListRecord = {
+      id: crypto.randomUUID(),
+      listNumber: (await this.db.lists.count()) + 1,
+      createdDate,
+      createdAt: new Date().toISOString(),
+    };
+    await this.db.lists.add(list);
+    const nodes: ReviewNode[] = buildReviewDates(createdDate).map((dueDate, sequence) => ({
+      id: crypto.randomUUID(), listId: list.id, dueDate, completedAt: null, sequence,
+    }));
+    await this.db.reviewNodes.bulkAdd(nodes);
+    return list;
+  }
+
+  private async insertEntries(listId: string, drafts: EntryDraft[]): Promise<void> {
+    const now = new Date().toISOString();
+    await this.db.entries.bulkAdd(drafts.map((draft) => ({
+      ...draft,
+      id: crypto.randomUUID(),
+      listId,
+      normalizedEnglish: normalizeEnglish(draft.english),
+      updatedAt: now,
+    })));
   }
 
   getLists(): Promise<ListRecord[]> {

@@ -38,9 +38,11 @@ function captureDraft(patch: Partial<CaptureDraft> = {}): CaptureDraft {
 describe('EnglishReviewRepository', () => {
   let db: EnglishReviewDatabase;
   let repo: EnglishReviewRepository;
+  let databaseName: string;
 
   beforeEach(() => {
-    db = new EnglishReviewDatabase(`english-review-${crypto.randomUUID()}`);
+    databaseName = `english-review-${crypto.randomUUID()}`;
+    db = new EnglishReviewDatabase(databaseName);
     repo = new EnglishReviewRepository(db);
   });
 
@@ -58,6 +60,53 @@ describe('EnglishReviewRepository', () => {
     expect(second.id).toBe(first.id);
     expect(await repo.getLists()).toHaveLength(1);
     expect(await repo.getEntries(first.id)).toHaveLength(2);
+  });
+
+  it('appends directly to one daily List and creates review nodes once', async () => {
+    const first = await repo.appendToDailyList('2026-08-21', [retain]);
+    const second = await repo.appendToDailyList('2026-08-21', [
+      { ...retain, english: 'subtle', meaningsZh: ['细微的'] },
+    ]);
+
+    expect(first).toMatchObject({ ok: true, list: { listNumber: 1 } });
+    expect(second).toMatchObject({ ok: true, list: { listNumber: 1 } });
+    expect(await db.lists.count()).toBe(1);
+    expect(await db.entries.count()).toBe(2);
+    expect(await db.reviewNodes.count()).toBe(6);
+  });
+
+  it('blocks normalized duplicates unless the user explicitly overrides', async () => {
+    const original = await repo.appendToDailyList('2026-08-20', [retain]);
+    expect(original.ok).toBe(true);
+
+    const blocked = await repo.appendToDailyList('2026-08-21', [
+      { ...retain, english: '  RETAIN  ' },
+    ]);
+    expect(blocked).toEqual({
+      ok: false,
+      code: 'DUPLICATE',
+      duplicates: [{ listId: original.ok ? original.list.id : '', listNumber: 1, normalizedEnglish: 'retain' }],
+    });
+
+    const allowed = await repo.appendToDailyList('2026-08-21', [retain], true);
+    expect(allowed).toMatchObject({ ok: true, list: { listNumber: 2 } });
+  });
+
+  it('converges simultaneous first saves from separate connections on one List', async () => {
+    const secondDb = new EnglishReviewDatabase(databaseName);
+    const secondRepo = new EnglishReviewRepository(secondDb);
+    try {
+      const [left, right] = await Promise.all([
+        repo.appendToDailyList('2026-08-21', [retain]),
+        secondRepo.appendToDailyList('2026-08-21', [{ ...retain, english: 'subtle' }]),
+      ]);
+      expect(left.ok && right.ok).toBe(true);
+      expect(await db.lists.count()).toBe(1);
+      expect(await db.entries.count()).toBe(2);
+      expect(await db.reviewNodes.count()).toBe(6);
+    } finally {
+      secondDb.close();
+    }
   });
 
   it('creates six ordered review nodes atomically with a new List', async () => {
