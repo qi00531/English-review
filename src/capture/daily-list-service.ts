@@ -19,10 +19,14 @@ export class DailyListService {
 
   async saveCapture(capture: CaptureDraft, allowDuplicate: boolean): Promise<SaveCaptureResult> {
     if (capture.status !== 'ready') return { ok: false, code: 'INVALID_DRAFT' };
+    return this.saveEntries([captureToEntryDraft(capture)], allowDuplicate);
+  }
+
+  async saveEntries(drafts: EntryDraft[], allowDuplicates: boolean): Promise<SaveCaptureResult> {
     const result = await this.repository.appendToDailyList(
       this.getLocalDate(),
-      [captureToEntryDraft(capture)],
-      allowDuplicate,
+      drafts,
+      allowDuplicates,
     );
     if (!result.ok) {
       const first = result.duplicates[0];

@@ -43,4 +43,20 @@ describe('DailyListService', () => {
       ok: false, code: 'DUPLICATE', duplicate: { listId: 'list-1', listNumber: 1 },
     });
   });
+
+  it('saves a batch of manual entries through the same daily List rule', async () => {
+    const appendToDailyList = vi.fn().mockResolvedValue({
+      ok: true, list: { id: 'list-4', listNumber: 4, createdDate: '2026-08-27', createdAt: '' },
+    });
+    const service = new DailyListService({ appendToDailyList }, () => '2026-08-27');
+    const entry = {
+      english: 'retain', usIpa: null, ukIpa: null, usAudioUrl: null, ukAudioUrl: null,
+      meaningsZh: ['保留'], exampleEn: 'We retain more.', exampleZh: '我们记住更多。',
+      audioFallback: 'speech-synthesis' as const, source: 'manual' as const,
+    };
+    await expect(service.saveEntries([entry], false)).resolves.toEqual({
+      ok: true, listId: 'list-4', listNumber: 4,
+    });
+    expect(appendToDailyList).toHaveBeenCalledWith('2026-08-27', [entry], false);
+  });
 });

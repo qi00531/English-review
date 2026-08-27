@@ -3,23 +3,25 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { EnrichmentResult } from '../../../server/enrichment/schema';
 import type { EntryDraft } from '../../db/repository';
-import type { LocalDate } from '../../domain/models';
+import type { SaveCaptureResult } from '../../capture/model';
+import { toSafeCaptureError } from '../../capture/capture-error';
 import { Action } from '../../ui/Action';
 import { parseTerms } from './parseTerms';
 import { replaceResult, toEntryDrafts, updateReadyResult } from './useEnrichmentDraft';
 
 type Props = {
   enrich: (terms: string[]) => Promise<EnrichmentResult[]>;
-  save: (today: LocalDate, drafts: EntryDraft[]) => Promise<unknown>;
-  today: LocalDate;
+  save: (drafts: EntryDraft[], allowDuplicates: boolean) => Promise<SaveCaptureResult>;
 };
 
-export function CapturePage({ enrich, save, today }: Props) {
+export function CapturePage({ enrich, save }: Props) {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [results, setResults] = useState<EnrichmentResult[]>([]);
   const [state, setState] = useState<'idle' | 'generating' | 'reviewing' | 'saving'>('idle');
   const [error, setError] = useState('');
+  const [duplicate, setDuplicate] = useState<{ listId: string; listNumber: number } | null>(null);
+  const [success, setSuccess] = useState('');
 
   async function generate() {
     try {
@@ -37,10 +39,22 @@ export function CapturePage({ enrich, save, today }: Props) {
     if (next) setResults((current) => replaceResult(current, next));
   }
 
-  async function saveReady() {
-    setState('saving');
-    await save(today, toEntryDrafts(results));
-    navigate('/');
+  async function saveReady(allowDuplicates = false) {
+    try {
+      setError(''); setSuccess(''); setState('saving');
+      const result = await save(toEntryDrafts(results), allowDuplicates);
+      if (!result.ok) {
+        if (result.code === 'DUPLICATE') setDuplicate(result.duplicate);
+        else setError('学习内容尚未准备完成，请重试');
+        return;
+      }
+      setDuplicate(null);
+      setSuccess(`已加入 List ${result.listNumber}`);
+    } catch (reason) {
+      setError(toSafeCaptureError(reason, 'save').message);
+    } finally {
+      setState('reviewing');
+    }
   }
 
   return (
@@ -69,7 +83,13 @@ export function CapturePage({ enrich, save, today }: Props) {
             <label>例句翻译<textarea value={result.exampleZh} onChange={(event) => setResults((current) => updateReadyResult(current, result.english, { exampleZh: event.target.value }))} /></label>
           </article>
         ))}
-        <div className="capture-save"><Action onClick={saveReady} disabled={state === 'saving' || !results.some((item) => item.status === 'ready')}>{state === 'saving' ? '正在保存…' : '保存到今日 List'}</Action></div>
+        {duplicate && <div className="duplicate-confirm" role="alert">
+          <span>List {duplicate.listNumber} 已存在该内容</span>
+          <button type="button" onClick={() => setDuplicate(null)}>取消</button>
+          <button type="button" onClick={() => void saveReady(true)}>仍然保存</button>
+        </div>}
+        {success && <div className="capture-success" role="status"><span>{success}</span><button type="button" onClick={() => navigate('/')}>返回今日</button></div>}
+        <div className="capture-save"><Action onClick={() => void saveReady(false)} disabled={state === 'saving' || !results.some((item) => item.status === 'ready')}>{state === 'saving' ? '正在保存…' : '保存到今日 List'}</Action></div>
       </div>}
     </section>
   );
