@@ -64,14 +64,17 @@ export function ReviewRoute({
     backHref={backHref}
     backLabel={backLabel}
     onComplete={async () => {
+      if (fromHistory) {
+        navigate(`/history?tab=${returnTab}`);
+        return;
+      }
       const today = format(new Date(), 'yyyy-MM-dd');
       const snapshot = await reviewRepository.snapshot();
       const node = snapshot.reviewNodes
-        .filter((item) => item.listId === listId && item.completedAt === null && (fromHistory ? item.dueDate === today : item.dueDate <= today))
+        .filter((item) => item.listId === listId && item.completedAt === null && item.dueDate <= today)
         .sort((left, right) => left.dueDate.localeCompare(right.dueDate) || left.sequence - right.sequence)[0];
       if (node) await reviewRepository.completeReviewNode(node.id);
-      if (fromHistory) navigate(`/history?tab=${returnTab}`);
-      else navigate('/', { state: node ? { completedNodeId: node.id } : undefined });
+      navigate('/', { state: node ? { completedNodeId: node.id } : undefined });
     }}
   />;
 }

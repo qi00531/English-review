@@ -28,16 +28,26 @@ function snapshot(dueDate: LocalDate): RepositorySnapshot {
   return { lists: [list], entries: [entry], reviewNodes: [{ id: 'n1', listId: 'l1', dueDate, completedAt: null, sequence: 0 }], drafts: [], settings: [], captureDrafts: [] };
 }
 
-it('completes only a node due today and returns to the originating History tab', async () => {
+it('keeps a due-today history review outside formal schedule progress', async () => {
   const today = format(new Date(), 'yyyy-MM-dd') as LocalDate;
   const repository = { snapshot: vi.fn().mockResolvedValue(snapshot(today)), completeReviewNode: vi.fn().mockResolvedValue(undefined) };
   renderRoute(repository);
 
   await userEvent.click(await screen.findByRole('button', { name: '完成复习' }));
 
-  expect(repository.snapshot).toHaveBeenCalledTimes(2);
-  expect(repository.completeReviewNode).toHaveBeenCalledWith('n1');
+  expect(repository.completeReviewNode).not.toHaveBeenCalled();
   expect(await screen.findByText('/history?tab=lists')).toBeInTheDocument();
+});
+
+it('completes the oldest due node when opened from today tasks', async () => {
+  const today = format(new Date(), 'yyyy-MM-dd') as LocalDate;
+  const repository = { snapshot: vi.fn().mockResolvedValue(snapshot(today)), completeReviewNode: vi.fn().mockResolvedValue(undefined) };
+  renderRoute(repository, '/review/l1');
+
+  await userEvent.click(await screen.findByRole('button', { name: '完成复习' }));
+
+  expect(repository.completeReviewNode).toHaveBeenCalledWith('n1');
+  expect(await screen.findByText('/')).toBeInTheDocument();
 });
 
 it('treats a future-only List as extra review without changing its plan', async () => {
