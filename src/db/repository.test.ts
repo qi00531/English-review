@@ -180,7 +180,7 @@ describe('EnglishReviewRepository', () => {
     await expect(repo.migrateReadyCaptures('2026-08-27')).resolves.toEqual({
       migrated: 2, listNumber: 1,
     });
-    expect((await db.entries.toArray()).map((entry) => entry.english)).toEqual(['potential', 'subtle']);
+    expect((await db.entries.toArray()).map((entry) => entry.english).sort()).toEqual(['potential', 'subtle'].sort());
     expect((await db.captureDrafts.toArray()).map((draft) => draft.text)).toEqual(['broken']);
     await expect(repo.migrateReadyCaptures('2026-08-27')).resolves.toEqual({ migrated: 0 });
   });

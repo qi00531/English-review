@@ -34,10 +34,8 @@ export function buildTodayViewState(today: LocalDate, snapshot: RepositorySnapsh
 
   return {
     due,
-    captureLocked: selected.captureLocked,
     progress: { completed: completedToday, total: Math.max(total, 1) },
     streakDays: calculateLearningStreak(snapshot.lists.map((list) => list.createdDate), today),
-    inboxCount: snapshot.captureDrafts.length,
   };
 }
 
@@ -47,9 +45,8 @@ export function useTodayState(repository: EnglishReviewRepository = defaultRepos
     loading: boolean;
     progress: { completed: number; total: number };
     streakDays: number;
-    inboxCount: number;
   }>({
-    due: [], loading: true, progress: { completed: 0, total: 1 }, streakDays: 0, inboxCount: 0,
+    due: [], loading: true, progress: { completed: 0, total: 1 }, streakDays: 0,
   });
 
   useEffect(() => {
@@ -58,7 +55,7 @@ export function useTodayState(repository: EnglishReviewRepository = defaultRepos
         ...buildTodayViewState(format(new Date(), 'yyyy-MM-dd') as LocalDate, snapshot),
         loading: false,
       }),
-      error: () => setState({ due: [], loading: false, progress: { completed: 0, total: 1 }, streakDays: 0, inboxCount: 0 }),
+      error: () => setState({ due: [], loading: false, progress: { completed: 0, total: 1 }, streakDays: 0 }),
     });
     return () => subscription.unsubscribe();
   }, [repository]);

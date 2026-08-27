@@ -15,10 +15,9 @@ type TodayPageProps = {
   loading: boolean;
   progress: { completed: number; total: number };
   streakDays: number;
-  inboxCount?: number;
 };
 
-export function TodayPage({ due, loading, progress, streakDays, inboxCount = 0 }: TodayPageProps) {
+export function TodayPage({ due, loading, progress, streakDays }: TodayPageProps) {
   if (loading) return <section className="today-page today-page--loading">
     <div className="today-progress"><Progress value={0} max={1} label="今日进度" /></div>
     <p className="today-loading" role="status">正在整理今天的学习计划…</p>
@@ -30,7 +29,7 @@ export function TodayPage({ due, loading, progress, streakDays, inboxCount = 0 }
       <div className="today-progress"><Progress value={progress.completed} max={progress.total} label="今日进度" /></div>
       <div className={`today-core ${locked ? 'today-core--pending' : ''}`}>
         <h2 className="today-status">{locked ? `今天还有 ${due.length} 个 List 待复习` : '今天的复习已经完成。'}</h2>
-        {locked ? <div className="due-list" aria-label="待复习 Lists">
+        {locked ? <><div className="due-list" aria-label="待复习 Lists">
           {due.map((item) => (
             <Link
               className="due-row"
@@ -43,13 +42,16 @@ export function TodayPage({ due, loading, progress, streakDays, inboxCount = 0 }
               <ArrowUpRight aria-hidden="true" size={19} strokeWidth={1.6} />
             </Link>
           ))}
-        </div> : <Link className="primary-capture" to="/capture" aria-label="记录今天所学">
+        </div><Link className="secondary-capture" to="/capture" aria-label="记录今天所学">
+          <PencilLine aria-hidden="true" size={17} strokeWidth={1.6} />
+          <span>记录今天所学</span>
+          <ArrowRight aria-hidden="true" size={17} strokeWidth={1.6} />
+        </Link></> : <Link className="primary-capture" to="/capture" aria-label="记录今天所学">
           <PencilLine aria-hidden="true" size={20} strokeWidth={1.6} />
           <span>记录今天所学</span>
           <ArrowRight aria-hidden="true" size={20} strokeWidth={1.6} />
         </Link>}
       </div>
-      {inboxCount > 0 && <Link className="inbox-shortcut" to="/inbox" aria-label={`待整理 ${inboxCount}`}>待整理 <strong>{inboxCount}</strong></Link>}
       <div className="learning-streak" aria-label={`连续学习 ${streakDays} 天`}>
         <span aria-hidden="true" className="streak-line" />
         <span className="streak-copy"><CalendarDays aria-hidden="true" size={19} strokeWidth={1.5} /><span>连续学习</span><strong>{streakDays}</strong><span>天</span></span>

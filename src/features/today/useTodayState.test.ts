@@ -25,4 +25,6 @@ it('joins due nodes with List number and word count', () => {
   }]);
   expect(view.progress).toEqual({ completed: 1, total: 2 });
   expect(view.streakDays).toBe(2);
+  expect(view).not.toHaveProperty('captureLocked');
+  expect(view).not.toHaveProperty('inboxCount');
 });

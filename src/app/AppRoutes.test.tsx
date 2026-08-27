@@ -8,7 +8,6 @@ vi.mock('../features/today/useTodayState', () => ({
     loading: false,
     progress: { completed: 0, total: 1 },
     streakDays: 0,
-    inboxCount: 0,
   }),
 }));
 
@@ -17,10 +16,15 @@ it.each([
   ['/capture', '记录今天所学'],
   ['/review/list-1', '开始复习'],
   ['/settings', '设置'],
-  ['/inbox', '待整理'],
 ])('renders the expected route for %s', async (route, heading) => {
   render(<MemoryRouter initialEntries={[route]}><AppRoutes /></MemoryRouter>);
   expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+});
+
+it('redirects the legacy inbox route to today', async () => {
+  render(<MemoryRouter initialEntries={['/inbox']}><AppRoutes /></MemoryRouter>);
+  expect(await screen.findByRole('heading', { name: '今天的复习已经完成。' })).toBeInTheDocument();
+  expect(screen.queryByText('待整理')).not.toBeInTheDocument();
 });
 
 it('renders History directly from its content tabs', async () => {
