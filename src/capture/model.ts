@@ -27,6 +27,11 @@ export type AiSettings = {
 
 export type DuplicateMatch = { listId: string; listNumber: number } | null;
 
+export type SaveCaptureResult =
+  | { ok: true; listId: string; listNumber: number }
+  | { ok: false; code: 'INVALID_DRAFT' }
+  | { ok: false; code: 'DUPLICATE'; duplicate: Exclude<DuplicateMatch, null> };
+
 export type CaptureMessage =
   | { type: 'PREVIEW_CAPTURE'; text: string }
   | { type: 'SAVE_CAPTURE'; draft: CaptureDraft; allowDuplicate: boolean }
