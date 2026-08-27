@@ -2,6 +2,16 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from './App';
 
+vi.mock('../features/today/useTodayState', () => ({
+  useTodayState: () => ({
+    due: [],
+    loading: false,
+    progress: { completed: 0, total: 1 },
+    streakDays: 0,
+    inboxCount: 0,
+  }),
+}));
+
 it.each([
   ['/', '今天的复习已经完成。'],
   ['/capture', '记录今天所学'],
