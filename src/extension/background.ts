@@ -4,6 +4,11 @@ import { repository } from '../db';
 import { CaptureBackgroundService } from './background-service';
 import { readAiSettings } from './settings';
 import { deliverSelectionCapture } from './context-menu';
+import { format } from 'date-fns';
+import type { LocalDate } from '../domain/models';
+import { migrateLegacyCaptures } from '../db/legacy-capture-migration';
+
+void migrateLegacyCaptures(repository, format(new Date(), 'yyyy-MM-dd') as LocalDate);
 
 const service = new CaptureBackgroundService(repository, readAiSettings, enrichSelection);
 

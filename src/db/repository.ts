@@ -1,6 +1,7 @@
 import { buildReviewDates } from '../domain/schedule';
 import type { LocalDate, ReviewNode } from '../domain/models';
 import type { CaptureDraft, DuplicateMatch } from '../capture/model';
+import { captureToEntryDraft } from '../capture/capture-to-entry';
 import {
   type DraftRecord,
   type EntryRecord,
@@ -191,6 +192,26 @@ export class EnglishReviewRepository {
         })));
         await this.db.captureDrafts.bulkDelete(ids);
         return list;
+      },
+    );
+  }
+
+  async migrateReadyCaptures(
+    createdDate: LocalDate,
+  ): Promise<{ migrated: number; listNumber?: number }> {
+    return this.db.transaction(
+      'rw',
+      this.db.captureDrafts,
+      this.db.lists,
+      this.db.entries,
+      this.db.reviewNodes,
+      async () => {
+        const ready = await this.db.captureDrafts.where('status').equals('ready').toArray();
+        if (ready.length === 0) return { migrated: 0 };
+        const list = await this.getOrCreateDailyList(createdDate);
+        await this.insertEntries(list.id, ready.map(captureToEntryDraft));
+        await this.db.captureDrafts.bulkDelete(ready.map((capture) => capture.id));
+        return { migrated: ready.length, listNumber: list.listNumber };
       },
     );
   }

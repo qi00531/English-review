@@ -169,4 +169,19 @@ describe('EnglishReviewRepository', () => {
     await expect(repo.promoteCaptureDrafts('2026-08-25', ['missing'])).rejects.toThrow('Capture selection is incomplete');
     await expect(repo.promoteCaptureDrafts('2026-08-25', ['capture-1'])).rejects.toThrow('Capture selection is incomplete');
   });
+
+  it('migrates ready legacy captures and preserves failed records', async () => {
+    await db.captureDrafts.bulkAdd([
+      captureDraft(),
+      captureDraft({ id: 'capture-2', text: 'subtle', normalizedText: 'subtle' }),
+      captureDraft({ id: 'capture-3', text: 'broken', normalizedText: 'broken', status: 'failed' }),
+    ]);
+
+    await expect(repo.migrateReadyCaptures('2026-08-27')).resolves.toEqual({
+      migrated: 2, listNumber: 1,
+    });
+    expect((await db.entries.toArray()).map((entry) => entry.english)).toEqual(['potential', 'subtle']);
+    expect((await db.captureDrafts.toArray()).map((draft) => draft.text)).toEqual(['broken']);
+    await expect(repo.migrateReadyCaptures('2026-08-27')).resolves.toEqual({ migrated: 0 });
+  });
 });
