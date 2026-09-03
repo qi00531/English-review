@@ -6,6 +6,7 @@ const DictionarySchema = z.array(z.object({
   phonetics: z.array(z.object({ text: z.string().optional(), audio: z.string().optional() })).optional(),
 }));
 const AiContentSchema = z.object({
+  term: z.string().trim().min(1),
   meaningsZh: z.array(z.string().trim().min(1)).min(1),
   exampleEn: z.string().trim().min(1),
   exampleZh: z.string().trim().min(1),
@@ -22,6 +23,30 @@ class AiRequestError extends Error {
     super('AI request failed');
     this.name = 'AiRequestError';
   }
+}
+
+class InvalidAiResponseError extends Error {
+  readonly code = 'INVALID_RESPONSE';
+  constructor() {
+    super('AI response does not match the selected term');
+    this.name = 'InvalidAiResponseError';
+  }
+}
+
+function normalizeTerm(value: string) {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+}
+
+function exampleUsesTerm(example: string, term: string) {
+  const exampleWords: string[] = example.toLocaleLowerCase('en-US').match(/[a-z]+(?:['’-][a-z]+)*/g) ?? [];
+  const termWords: string[] = term.toLocaleLowerCase('en-US').match(/[a-z]+(?:['’-][a-z]+)*/g) ?? [];
+  let cursor = 0;
+  return termWords.length > 0 && termWords.every((word) => {
+    const index = exampleWords.indexOf(word, cursor);
+    if (index < 0) return false;
+    cursor = index + 1;
+    return true;
+  });
 }
 
 export async function enrichSelection(
@@ -47,30 +72,53 @@ export async function enrichSelection(
     // Dictionary metadata is optional; AI content remains required.
   }
 
-  const aiResponse = await request(`${settings.baseUrl.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${settings.apiKey}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: settings.model,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: '你是严谨的英汉学习词典编辑。只返回 JSON：meaningsZh 为主要中文义项；exampleEn 只能有一句常见义项例句；exampleZh 为准确翻译。' },
-        { role: 'user', content: validated.text },
-      ],
-    }),
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!aiResponse.ok) throw new AiRequestError(aiResponse.status);
-  const completion = CompletionSchema.parse(await aiResponse.json());
-  const content = AiContentSchema.parse(JSON.parse(completion.choices[0].message.content));
+  let content: z.infer<typeof AiContentSchema> | null = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const aiResponse = await request(`${settings.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${settings.apiKey}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: settings.model,
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: [
+              '你是严谨的英汉学习词典编辑，只处理用户给出的目标英文。',
+              '只返回 JSON，字段必须为 term、meaningsZh、exampleEn、exampleZh。',
+              'term 必须原样等于目标英文；meaningsZh 只能是该词或短语的主要中文义项；',
+              'exampleEn 只能有一句且必须原样包含目标英文；exampleZh 是该句的准确翻译。',
+              '禁止回答其他单词。',
+            ].join(''),
+          },
+          { role: 'user', content: `目标英文：${validated.text}${attempt === 1 ? '\n上一次回答与目标不一致，请严格重新生成。' : ''}` },
+        ],
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!aiResponse.ok) throw new AiRequestError(aiResponse.status);
+    try {
+      const completion = CompletionSchema.parse(await aiResponse.json());
+      const candidate = AiContentSchema.parse(JSON.parse(completion.choices[0].message.content));
+      if (normalizeTerm(candidate.term) === validated.normalizedText
+        && exampleUsesTerm(candidate.exampleEn, validated.text)) {
+        content = candidate;
+        break;
+      }
+    } catch {
+      // A malformed or mismatched answer gets one constrained retry.
+    }
+  }
+  if (!content) throw new InvalidAiResponseError();
+  const { term: _term, ...learningContent } = content;
 
   return {
     id: crypto.randomUUID(),
     text: validated.text,
     normalizedText: validated.normalizedText,
     type: validated.type,
-    ...content,
+    ...learningContent,
     usIpa: ipa,
     ukIpa: null,
     usAudioUrl: audioUrl,
