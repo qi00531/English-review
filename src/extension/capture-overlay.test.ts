@@ -14,6 +14,28 @@ const draft: CaptureDraft = {
 describe('capture overlay', () => {
   afterEach(() => document.body.replaceChildren());
 
+  it('shows a compact pen launcher and keeps it in a loading state until preview resolves', async () => {
+    const user = userEvent.setup();
+    let resolvePreview!: (value: unknown) => void;
+    const sendMessage = vi.fn(() => new Promise((resolve) => { resolvePreview = resolve; }));
+    const overlay = createCaptureOverlay({ sendMessage });
+    const ui = within(overlay.root as unknown as HTMLElement);
+    overlay.showLauncher('generate', new DOMRect());
+
+    const launcher = ui.getByRole('button', { name: '收录到 Word Journal' });
+    expect(launcher).toContainHTML('<svg');
+    expect(launcher).not.toHaveTextContent('W');
+    await user.click(launcher);
+
+    const loading = ui.getByRole('button', { name: '正在生成释义与例句' });
+    expect(loading).toBeDisabled();
+    expect(loading).toHaveAttribute('aria-busy', 'true');
+    expect(ui.queryByRole('dialog')).not.toBeInTheDocument();
+
+    resolvePreview({ ok: true, draft, duplicate: null });
+    expect(await ui.findByRole('dialog', { name: '收录预览' })).toBeInTheDocument();
+  });
+
   it('requests preview only after launcher click and saves edited content', async () => {
     const user = userEvent.setup();
     const sendMessage = vi.fn()

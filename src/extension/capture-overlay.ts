@@ -8,7 +8,7 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
   host.dataset.wordJournal = 'capture';
   const root = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
-  style.textContent = `:host{all:initial}.launcher{position:fixed;z-index:2147483647;width:38px;height:38px;border:1px solid #718374;border-radius:10px;background:#f7f3e8;color:#263b30;box-shadow:0 8px 24px #24352b2b;cursor:pointer;font:600 18px Georgia}.panel{position:fixed;z-index:2147483647;width:min(360px,calc(100vw - 24px));padding:20px;background:#f8f4e9;color:#26362e;border:1px solid #d8d4c7;border-radius:14px;box-shadow:0 18px 48px #1f302638;font:14px/1.5 system-ui}.panel h2{margin:0 0 4px;font:500 28px/1.1 Georgia}.type,.note{color:#657168;font-size:12px}.panel label{display:block;margin:12px 0 4px}.panel textarea{box-sizing:border-box;width:100%;min-height:54px;padding:9px;border:1px solid #d5d2c6;border-radius:7px;background:#fffdf6;color:#26362e}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.actions button{min-height:40px;padding:0 14px;border:0;border-radius:7px;background:transparent;color:#405248;cursor:pointer}.actions .primary{background:#355944;color:#fffdf4}.error{color:#8b4239}`;
+  style.textContent = `:host{all:initial}.launcher{position:fixed;z-index:2147483647;box-sizing:border-box;width:34px;height:34px;padding:0;border:1px solid #87978c;border-radius:9px;background:#f8f4e9;color:#2d4638;box-shadow:0 5px 16px #24352b1c;display:grid;place-items:center;cursor:pointer;transition:transform 140ms ease,border-color 140ms ease,box-shadow 140ms ease}.launcher svg{width:16px;height:16px}.launcher:hover:not(:disabled){transform:translateY(-1px);border-color:#587061;box-shadow:0 8px 22px #24352b2a}.launcher:disabled{opacity:1;cursor:wait}.launcher[data-loading=true]::after{content:"";position:absolute;inset:-3px;border:1.5px solid transparent;border-top-color:#456652;border-right-color:#91a095;border-radius:11px;animation:wj-spin 800ms linear infinite}@keyframes wj-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.launcher{transition:none}.launcher[data-loading=true]::after{animation:none;border-color:#91a095;border-top-color:#456652}}.panel{position:fixed;z-index:2147483647;width:min(360px,calc(100vw - 24px));padding:20px;background:#f8f4e9;color:#26362e;border:1px solid #d8d4c7;border-radius:14px;box-shadow:0 18px 48px #1f302638;font:14px/1.5 system-ui}.panel h2{margin:0 0 4px;font:500 28px/1.1 Georgia}.type,.note{color:#657168;font-size:12px}.panel label{display:block;margin:12px 0 4px}.panel textarea{box-sizing:border-box;width:100%;min-height:54px;padding:9px;border:1px solid #d5d2c6;border-radius:7px;background:#fffdf6;color:#26362e}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.actions button{min-height:40px;padding:0 14px;border:0;border-radius:7px;background:transparent;color:#405248;cursor:pointer}.actions .primary{background:#355944;color:#fffdf4}.error{color:#8b4239}`;
   root.append(style);
   document.body.append(host);
   let text = '';
@@ -19,6 +19,22 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
     element.style.top = `${Math.min(rect.bottom + 8, window.innerHeight - 300)}px`;
   }
   function dismiss() { [...root.children].filter((node) => node !== style).forEach((node) => node.remove()); }
+  function createPenIcon() {
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '1.7');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    icon.setAttribute('aria-hidden', 'true');
+    const nib = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    nib.setAttribute('d', 'm14 4 6 6L8.5 21H3v-5.5z');
+    const detail = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    detail.setAttribute('d', 'm12 6 6 6M3 21h6');
+    icon.append(nib, detail);
+    return icon;
+  }
   function showMessage(message: string, role: 'status' | 'alert' = 'status') {
     dismiss();
     const panel = document.createElement('div');
@@ -76,6 +92,9 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
     position(button); root.append(button);
     async function preview() {
       button.disabled = true;
+      button.dataset.loading = 'true';
+      button.setAttribute('aria-label', '正在生成释义与例句');
+      button.setAttribute('aria-busy', 'true');
       try {
         const result = await sendMessage({ type: 'PREVIEW_CAPTURE', text });
         if (result.ok) showPreview(result.draft, result.duplicate);
@@ -96,6 +115,7 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
       }
     }
     button.addEventListener('click', () => void preview());
+    button.replaceChildren(createPenIcon());
   }
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') dismiss(); });
   document.addEventListener('mousedown', (event) => {
