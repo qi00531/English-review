@@ -17,6 +17,22 @@ describe('enrichSelection', () => {
     expect(request.mock.calls[1][1].body).not.toContain('https://audio.test');
   });
 
+  it('normalizes a provider string of Chinese meanings into separate meanings', async () => {
+    const content = JSON.stringify({
+      term: 'generate', meaningsZh: '生成；产生',
+      exampleEn: 'Solar panels generate electricity from sunlight.',
+      exampleZh: '太阳能电池板通过阳光发电。',
+    });
+    const request = vi.fn()
+      .mockResolvedValueOnce(json([]))
+      .mockResolvedValueOnce(json({ choices: [{ message: { content } }] }))
+      .mockResolvedValueOnce(json({ choices: [{ message: { content } }] }));
+
+    await expect(enrichSelection('generate', settings, request)).resolves.toMatchObject({
+      meaningsZh: ['生成', '产生'],
+    });
+  });
+
   it('falls back to speech synthesis when the dictionary fails', async () => {
     const request = vi.fn()
       .mockResolvedValueOnce(new Response('', { status: 404 }))

@@ -58,6 +58,17 @@ describe('capture overlay', () => {
     expect(ui.getByRole('button', { name: '加入今日 List' })).toBeInTheDocument();
   });
 
+  it('asks for a page refresh when an extension reload invalidates the content script', async () => {
+    const user = userEvent.setup();
+    const overlay = createCaptureOverlay({ sendMessage: vi.fn().mockRejectedValue(new Error('Extension context invalidated.')) });
+    const ui = within(overlay.root as unknown as HTMLElement);
+    overlay.showLauncher('generate', new DOMRect());
+
+    await user.click(ui.getByRole('button', { name: '收录到 Word Journal' }));
+
+    expect(ui.getByRole('alert')).toHaveTextContent('扩展已更新，请刷新当前网页后重试');
+  });
+
   it('retries a failed save with the edited preview intact', async () => {
     const user = userEvent.setup();
     const error = {

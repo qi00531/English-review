@@ -7,7 +7,12 @@ const DictionarySchema = z.array(z.object({
 }));
 const AiContentSchema = z.object({
   term: z.string().trim().min(1),
-  meaningsZh: z.array(z.string().trim().min(1)).min(1),
+  meaningsZh: z.preprocess(
+    (value) => typeof value === 'string'
+      ? value.split(/[；;\n]+/).map((meaning) => meaning.trim()).filter(Boolean)
+      : value,
+    z.array(z.string().trim().min(1)).min(1),
+  ),
   exampleEn: z.string().trim().min(1),
   exampleZh: z.string().trim().min(1),
 });

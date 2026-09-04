@@ -84,8 +84,15 @@ export function createCaptureOverlay({ sendMessage }: { sendMessage: Sender }) {
           const message = result.code === 'AI_KEY_MISSING' ? '请先在 Word Journal 设置中填写 API Key' : '内容格式无法识别，请重新选择单词或短语';
           showError({ code: result.code === 'AI_KEY_MISSING' ? 'AUTH_FAILED' : 'INVALID_CONTENT', message, stage: 'preview', detail: `错误类型: ${result.code}\n阶段: preview\n说明: ${message}` }, preview);
         }
-      } catch {
-        showError({ code: 'NETWORK', message: '网络连接失败，请检查连接后重试', stage: 'preview', detail: '错误类型: NETWORK\n阶段: preview\n说明: 网络连接失败，请检查连接后重试' }, preview);
+      } catch (reason) {
+        const contextInvalidated = reason instanceof Error && /extension context invalidated/i.test(reason.message);
+        const message = contextInvalidated
+          ? '扩展已更新，请刷新当前网页后重试'
+          : '网络连接失败，请检查连接后重试';
+        showError({
+          code: 'NETWORK', message, stage: 'preview',
+          detail: `错误类型: NETWORK\n阶段: preview\n说明: ${message}`,
+        }, contextInvalidated ? () => window.location.reload() : preview);
       }
     }
     button.addEventListener('click', () => void preview());
