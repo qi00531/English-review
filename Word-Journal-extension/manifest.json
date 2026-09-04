@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Word Journal",
+  "version": "1.0.0",
+  "description": "Capture English words and phrases into a focused review journal.",
+  "permissions": ["storage", "scripting", "contextMenus", "tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "extension/background.js", "type": "module" },
+  "action": { "default_title": "打开 Word Journal" },
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "js": ["extension/content.js"],
+    "run_at": "document_idle"
+  }]
+}
