@@ -5,6 +5,32 @@ const settings = { baseUrl: 'https://api.example/v1', model: 'model', apiKey: 's
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 
 describe('enrichSelection', () => {
+  it('starts dictionary and AI requests concurrently', async () => {
+    let resolveDictionary!: (response: Response) => void;
+    let resolveAi!: (response: Response) => void;
+    const dictionaryResponse = new Promise<Response>((resolve) => { resolveDictionary = resolve; });
+    const aiResponse = new Promise<Response>((resolve) => { resolveAi = resolve; });
+    const request = vi.fn((input: RequestInfo | URL) => String(input).includes('dictionaryapi.dev')
+      ? dictionaryResponse
+      : aiResponse);
+
+    const enrichment = enrichSelection('generate', settings, request);
+
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(String(request.mock.calls[0][0])).toContain('dictionaryapi.dev');
+    expect(String(request.mock.calls[1][0])).toContain('/chat/completions');
+
+    resolveDictionary(json([{ phonetics: [{ text: '/ˈdʒenəreɪt/', audio: 'https://audio.test/generate.mp3' }] }]));
+    resolveAi(json({ choices: [{ message: { content: JSON.stringify({
+      term: 'generate', meaningsZh: ['生成', '产生'],
+      exampleEn: 'Solar panels generate electricity.', exampleZh: '太阳能板产生电力。',
+    }) } }] }));
+
+    await expect(enrichment).resolves.toMatchObject({
+      meaningsZh: ['生成', '产生'], usAudioUrl: 'https://audio.test/generate.mp3',
+    });
+  });
+
   it('combines dictionary audio with strict AI content', async () => {
     const request = vi.fn()
       .mockResolvedValueOnce(json([{ phonetics: [{ text: '/pəˈtenʃəl/', audio: 'https://audio.test/p.mp3' }] }]))

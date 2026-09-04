@@ -54,19 +54,11 @@ function exampleUsesTerm(example: string, term: string) {
   });
 }
 
-export async function enrichSelection(
-  raw: string,
-  settings: AiSettings,
-  request: Request = fetch,
-): Promise<CaptureDraft> {
-  if (!settings.apiKey.trim()) throw new Error('AI_KEY_MISSING');
-  const validated = validateSelection(raw);
-  if (!validated.ok) throw new Error(validated.code);
-
+async function lookupDictionary(term: string, request: Request) {
   let ipa: string | null = null;
   let audioUrl: string | null = null;
   try {
-    const response = await request(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(validated.text)}`);
+    const response = await request(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(term)}`);
     if (response.ok) {
       const dictionary = DictionarySchema.parse(await response.json());
       const phonetic = dictionary[0]?.phonetics?.find((item) => item.audio) ?? dictionary[0]?.phonetics?.[0];
@@ -76,8 +68,14 @@ export async function enrichSelection(
   } catch {
     // Dictionary metadata is optional; AI content remains required.
   }
+  return { ipa, audioUrl };
+}
 
-  let content: z.infer<typeof AiContentSchema> | null = null;
+async function generateLearningContent(
+  target: { text: string; normalizedText: string },
+  settings: AiSettings,
+  request: Request,
+) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const aiResponse = await request(`${settings.baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
@@ -97,7 +95,7 @@ export async function enrichSelection(
               '禁止回答其他单词。',
             ].join(''),
           },
-          { role: 'user', content: `目标英文：${validated.text}${attempt === 1 ? '\n上一次回答与目标不一致，请严格重新生成。' : ''}` },
+          { role: 'user', content: `目标英文：${target.text}${attempt === 1 ? '\n上一次回答与目标不一致，请严格重新生成。' : ''}` },
         ],
       }),
       signal: AbortSignal.timeout(20_000),
@@ -106,16 +104,27 @@ export async function enrichSelection(
     try {
       const completion = CompletionSchema.parse(await aiResponse.json());
       const candidate = AiContentSchema.parse(JSON.parse(completion.choices[0].message.content));
-      if (normalizeTerm(candidate.term) === validated.normalizedText
-        && exampleUsesTerm(candidate.exampleEn, validated.text)) {
-        content = candidate;
-        break;
-      }
+      if (normalizeTerm(candidate.term) === target.normalizedText
+        && exampleUsesTerm(candidate.exampleEn, target.text)) return candidate;
     } catch {
       // A malformed or mismatched answer gets one constrained retry.
     }
   }
-  if (!content) throw new InvalidAiResponseError();
+  throw new InvalidAiResponseError();
+}
+
+export async function enrichSelection(
+  raw: string,
+  settings: AiSettings,
+  request: Request = fetch,
+): Promise<CaptureDraft> {
+  if (!settings.apiKey.trim()) throw new Error('AI_KEY_MISSING');
+  const validated = validateSelection(raw);
+  if (!validated.ok) throw new Error(validated.code);
+
+  const dictionaryTask = lookupDictionary(validated.text, request);
+  const aiTask = generateLearningContent(validated, settings, request);
+  const [{ ipa, audioUrl }, content] = await Promise.all([dictionaryTask, aiTask]);
   const { term: _term, ...learningContent } = content;
 
   return {
